@@ -161,6 +161,20 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--cream);color:var(--t
   <div id="alert"></div>
 
   <div id="main-ui" style="display:none;">
+    <!-- GAS連携設定（折りたたみ） -->
+    <div style="margin-bottom:1rem;">
+      <button onclick="toggleGasForm()" style="font-size:11px;color:var(--text-light);background:none;border:none;cursor:pointer;padding:0;font-family:'Noto Sans JP',sans-serif;">⚙ スプシ連携設定</button>
+      <div id="gas-form" style="display:none;background:var(--cream-dark);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-top:6px;">
+        <div class="fg"><label>GAS WebアプリURL</label>
+          <input id="gas-url" type="text" placeholder="https://script.google.com/macros/s/XXXXX/exec">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="sm-btn" onclick="saveGas()">保存</button>
+          <button class="sm-btn" onclick="testGas()">接続テスト</button>
+          <span id="gas-status" style="font-size:11px;color:var(--text-light);"></span>
+        </div>
+      </div>
+    </div>
     <div class="summary-row" id="summary"></div>
     <div class="tabs">
       <button class="tab on" onclick="sw('today')">今日・今週</button>
@@ -195,20 +209,28 @@ function sv(){try{localStorage.setItem(dataKey(),JSON.stringify(D));}catch{}}
 let D={cs:[]},tab='today',filterCid=null,showForm=false;
 let gasUrl='';
 
-function saveGas(){gasUrl=document.getElementById('gas-url').value.trim();localStorage.setItem(gasKey(),gasUrl);updateGasBar('ok');toggleGasForm();}
+function saveGas(){
+  gasUrl=document.getElementById('gas-url').value.trim();
+  localStorage.setItem(gasKey(),gasUrl);
+  const s=document.getElementById('gas-status');
+  if(s)s.textContent='保存しました✅';
+  toggleGasForm();
+}
 async function testGas(){
   const url=document.getElementById('gas-url').value.trim();
   if(!url){alert('URLを入力してください');return;}
-  try{await fetch(url,{method:'GET',mode:'no-cors'});updateGasBar('ok');}catch{updateGasBar('ng');}
-}
-function updateGasBar(s){
-  const dot=document.getElementById('gas-dot'),txt=document.getElementById('gas-bar-txt');
-  if(s==='ok'){dot.className='gas-dot ok';txt.textContent='スプシ連携中（'+COACH+'）';}
-  else if(s==='ng'){dot.className='gas-dot ng';txt.textContent='接続NG';}
-  else{dot.className='gas-dot';txt.textContent='スプシ未連携';}
+  const s=document.getElementById('gas-status');
+  if(s)s.textContent='確認中...';
+  try{
+    await fetch(url,{method:'GET',mode:'no-cors'});
+    if(s)s.textContent='接続OK✅';
+  }catch{
+    if(s)s.textContent='接続NG❌';
+  }
 }
 function toggleGasForm(){
   const f=document.getElementById('gas-form');
+  if(!f)return;
   f.style.display=f.style.display==='none'?'block':'none';
   if(f.style.display==='block'&&gasUrl)document.getElementById('gas-url').value=gasUrl;
 }
