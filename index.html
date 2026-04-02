@@ -386,7 +386,7 @@ function renderContent(){
           ${tm}<div class="irow"><input class="memo-inp" id="mi${t.id}" placeholder="メモを追加..." value="${t.memo||''}"><button class="sm-btn" onclick="saveMemo(${c.id},${t.id})">保存</button></div>
           </div></div></div>`;
       }).join(''):'<div style="font-size:12px;color:var(--text-light);padding:6px 0;">未対応タスクなし</div>';
-      h+=`<div class="card"><div class="crow" style="margin-bottom:8px;">${dot(c.col)}<div class="tinfo"><div class="cname-h">${c.name}</div><div class="csub">${pend.length}件の未対応</div></div><button class="del" onclick="delC(${c.id})">削除</button></div>${cmemo}${tasks}</div>`;
+      h+=`<div class="card" id="ccard-${c.id}"><div class="crow" style="margin-bottom:8px;">${dot(c.col)}<div class="tinfo"><div class="cname-h">${c.name}</div><div class="csub">${pend.length}件の未対応</div></div><button class="sm-btn" onclick="openEditCustomer(${c.id})">名前編集</button><button class="del" onclick="delC(${c.id})">削除</button></div>${cmemo}${tasks}</div>`;
     });
     if(!h)h='<div class="empty"><div class="empty-icon">✨</div>受講生が登録されていません</div>';
   }else{
@@ -403,6 +403,28 @@ async function tog(cid,tid){
   t.dn=!t.dn;if(t.dn)await postGas('complete',t,c.name);
   sv();render();
 }
+function openEditCustomer(cid){
+  const c=D.cs.find(x=>x.id===cid);
+  const el=document.getElementById('ccard-'+cid);
+  if(!el)return;
+  const orig=el.innerHTML;
+  el.insertAdjacentHTML('afterbegin',`<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+    <input id="cn-inp-${cid}" type="text" value="${c.name}" style="flex:1;font-size:13px;padding:7px 10px;border-radius:8px;border:1.5px solid var(--pink-dark);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;">
+    <button class="btn-p" style="padding:7px 14px;" onclick="saveEditCustomer(${cid})">保存</button>
+    <button class="btn-c" style="padding:7px 10px;" onclick="render()">戻る</button>
+  </div>`);
+}
+
+function saveEditCustomer(cid){
+  const c=D.cs.find(x=>x.id===cid);
+  const inp=document.getElementById('cn-inp-'+cid);
+  if(!inp)return;
+  const newName=inp.value.trim();
+  if(!newName){alert('名前を入力してください');return;}
+  c.name=newName;
+  sv();render();
+}
+
 function delT(cid,tid){const c=D.cs.find(x=>x.id===cid);c.ts=c.ts.filter(t=>t.id!==tid);sv();render();}
 function delC(cid){if(!confirm('この受講生を削除しますか？'))return;D.cs=D.cs.filter(c=>c.id!==cid);if(filterCid===cid)filterCid=null;sv();render();}
 function saveMemo(cid,tid){
