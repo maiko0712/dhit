@@ -162,17 +162,18 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--cream);color:var(--t
 
   <div id="main-ui" style="display:none;">
     <!-- GAS連携設定（折りたたみ） -->
-    <div style="margin-bottom:1rem;">
+    <div style="margin-bottom:1rem;display:flex;align-items:center;gap:10px;">
       <button onclick="toggleGasForm()" style="font-size:11px;color:var(--text-light);background:none;border:none;cursor:pointer;padding:0;font-family:'Noto Sans JP',sans-serif;">⚙ スプシ連携設定</button>
-      <div id="gas-form" style="display:none;background:var(--cream-dark);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-top:6px;">
-        <div class="fg"><label>GAS WebアプリURL</label>
-          <input id="gas-url" type="text" placeholder="https://script.google.com/macros/s/XXXXX/exec">
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button class="sm-btn" onclick="saveGas()">保存</button>
-          <button class="sm-btn" onclick="testGas()">接続テスト</button>
-          <span id="gas-status" style="font-size:11px;color:var(--text-light);"></span>
-        </div>
+      <button id="load-btn" onclick="loadFromGas()" style="font-size:11px;color:var(--pink-dark);background:none;border:1px solid var(--pink);border-radius:20px;cursor:pointer;padding:3px 12px;font-family:'Noto Sans JP',sans-serif;">スプシから読み込む</button>
+    </div>
+    <div id="gas-form" style="display:none;background:var(--cream-dark);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem;">
+      <div class="fg"><label>GAS WebアプリURL</label>
+        <input id="gas-url" type="text" placeholder="https://script.google.com/macros/s/XXXXX/exec">
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="sm-btn" onclick="saveGas()">保存</button>
+        <button class="sm-btn" onclick="testGas()">接続テスト</button>
+        <span id="gas-status" style="font-size:11px;color:var(--text-light);"></span>
       </div>
     </div>
     <div class="summary-row" id="summary"></div>
@@ -241,6 +242,39 @@ async function postGas(action,task,studentName){
   try{await fetch(gasUrl,{method:'POST',body:form});}catch(e){console.warn('GAS送信失敗',e);}
 }
 
+async function loadFromGas(){
+  if(!gasUrl||!COACH){alert('スプシ連携設定をしてください');return;}
+  const btn=document.getElementById('load-btn');
+  if(btn)btn.textContent='読み込み中...';
+  try{
+    const res=await fetch(gasUrl+'?action=load&coach='+encodeURIComponent(COACH));
+    const json=await res.json();
+    if(json.status==='ok'&&json.tasks.length>0){
+      const customerMap={};
+      json.tasks.forEach(t=>{
+        if(!customerMap[t.studentName]){
+          const existing=D.cs.find(c=>c.name===t.studentName);
+          customerMap[t.studentName]=existing||{id:Date.now()+Math.random(),name:t.studentName,col:Object.keys(customerMap).length%5,memo:'',ts:[]};
+          if(!existing)D.cs.push(customerMap[t.studentName]);
+        }
+        const c=customerMap[t.studentName];
+        const exists=c.ts.find(x=>String(x.id)===String(t.id));
+        if(!exists){
+          c.ts.push({id:t.id,date:t.date,lbl:t.label,act:t.action,memo:t.memo||'',pri:'mid',dn:t.status==='完了'});
+        }
+      });
+      sv();render();
+      if(btn)btn.textContent='✅ 読み込み完了';
+    }else{
+      if(btn)btn.textContent='データなし';
+    }
+  }catch(e){
+    console.warn('読み込み失敗',e);
+    if(btn)btn.textContent='❌ 読み込み失敗';
+  }
+  setTimeout(()=>{if(btn)btn.textContent='スプシから読み込む';},3000);
+}
+
 function init(){
   document.getElementById('tlbl').textContent=today.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
   const urlCoach=getCoachFromUrl();
@@ -270,9 +304,7 @@ function startApp(coachName){
   document.getElementById('setup-area').innerHTML='';
   document.getElementById('coach-badge').textContent=coachName;
   document.getElementById('coach-badge').style.display='';
-  document.getElementById('gas-bar')&&(document.getElementById('gas-bar').style.display='none');
   document.getElementById('main-ui').style.display='block';
-  if(gasUrl)updateGasBar('ok');
   render();
 }
 
