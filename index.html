@@ -116,6 +116,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--cream);color:var(--t
 .cname-h{font-size:14px;font-weight:700;color:var(--brown);}
 .csub{font-size:12px;color:var(--text-light);}
 .sdiv{border:none;border-top:1px solid var(--border);margin:10px 0;}
+.pill-menu{position:absolute;background:var(--white);border:1.5px solid var(--border);border-radius:12px;box-shadow:0 4px 16px rgba(30,21,17,.15);padding:6px;z-index:100;min-width:140px;display:none;}
+.pill-menu.open{display:block;}
+.pill-menu button{display:block;width:100%;text-align:left;font-size:12px;padding:8px 12px;border:none;background:none;cursor:pointer;border-radius:8px;color:var(--text);font-family:'Noto Sans JP',sans-serif;}
+.pill-menu button:hover{background:var(--cream-dark);}
+.pill-menu button.danger{color:#E57373;}
+.pill-wrap{position:relative;display:inline-block;}
 .drag-handle{cursor:grab;color:var(--text-light);font-size:16px;padding:2px 6px;user-select:none;flex-shrink:0;}
 .drag-handle:active{cursor:grabbing;}
 .card.drag-over{border:2px dashed var(--pink-dark);background:var(--cream-dark);}
@@ -271,6 +277,7 @@ async function loadFromGas(){
 
 function init(){
   document.getElementById('tlbl').textContent=today.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
+  document.addEventListener('click',closeMenus);
   const urlCoach=getCoachFromUrl();
   if(urlCoach){startApp(urlCoach);}
   else{
@@ -326,8 +333,27 @@ function renderSummary(){
 function renderFilter(){
   const el=document.getElementById('filter-area');
   if(!D.cs.length){el.innerHTML='';return;}
-  const pills=D.cs.map(c=>`<button class="fpill${filterCid===c.id?' on':''}" onclick="setFilter(${c.id})">${c.name}</button>`).join('');
+  const pills=D.cs.map(c=>`
+    <div class="pill-wrap">
+      <button class="fpill${filterCid===c.id?' on':''}" onclick="pillClick(event,${c.id})">${c.name}</button>
+      <div class="pill-menu" id="pmenu-${c.id}">
+        <button onclick="setFilter(${c.id});closeMenus()">🔍 この受講生で絞込</button>
+        <button onclick="openEditCustomer(${c.id});closeMenus()">✏️ 名前を編集</button>
+        <button class="danger" onclick="delC(${c.id});closeMenus()">🗑 受講生を削除</button>
+      </div>
+    </div>`).join('');
   el.innerHTML=`<div class="filter-bar"><span class="filter-lbl">絞り込み：</span><button class="fpill${filterCid===null?' on':''}" onclick="setFilter(null)">すべて</button>${pills}</div>`;
+}
+
+function pillClick(e,cid){
+  e.stopPropagation();
+  const menu=document.getElementById('pmenu-'+cid);
+  const isOpen=menu.classList.contains('open');
+  closeMenus();
+  if(!isOpen)menu.classList.add('open');
+}
+function closeMenus(){
+  document.querySelectorAll('.pill-menu').forEach(m=>m.classList.remove('open'));
 }
 
 function dot(col){return `<div class="dot" style="background:${DOTCOLS[col%5]};"></div>`;}
@@ -508,13 +534,22 @@ async function tog(cid,tid){
 }
 function openEditCustomer(cid){
   const c=D.cs.find(x=>x.id===cid);
-  const el=document.getElementById('ccard-'+cid);
-  if(!el)return;
-  el.insertAdjacentHTML('afterbegin',`<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border);">
-    <input id="cn-inp-${cid}" type="text" value="${c.name}" style="flex:1;font-size:13px;padding:7px 10px;border-radius:8px;border:1.5px solid var(--pink-dark);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;">
-    <button class="btn-p" style="padding:7px 14px;" onclick="saveEditCustomer(${cid})">保存</button>
-    <button class="btn-c" style="padding:7px 10px;" onclick="render()">戻る</button>
-  </div>`);
+  if(!c)return;
+  // モーダル形式で表示
+  const modal=document.createElement('div');
+  modal.id='customer-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(30,21,17,.4);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  modal.innerHTML=`<div style="background:var(--white);border-radius:16px;padding:1.5rem;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(30,21,17,.2);">
+    <div style="font-size:13px;font-weight:700;color:var(--brown);margin-bottom:1rem;">受講生名を編集</div>
+    <input id="cn-inp-${cid}" type="text" value="${c.name}" style="width:100%;font-size:14px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--pink-dark);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;outline:none;margin-bottom:1rem;">
+    <div style="display:flex;gap:8px;">
+      <button class="btn-p" style="flex:1;" onclick="saveEditCustomer(${cid})">保存</button>
+      <button class="btn-c" onclick="document.getElementById('customer-modal').remove()">キャンセル</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.getElementById('cn-inp-'+cid).focus();
 }
 
 function saveEditCustomer(cid){
@@ -524,6 +559,8 @@ function saveEditCustomer(cid){
   const newName=inp.value.trim();
   if(!newName){alert('名前を入力してください');return;}
   c.name=newName;
+  const modal=document.getElementById('customer-modal');
+  if(modal)modal.remove();
   sv();render();
 }
 
