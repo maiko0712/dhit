@@ -116,6 +116,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--cream);color:var(--t
 .cname-h{font-size:14px;font-weight:700;color:var(--brown);}
 .csub{font-size:12px;color:var(--text-light);}
 .sdiv{border:none;border-top:1px solid var(--border);margin:10px 0;}
+.drag-handle{cursor:grab;color:var(--text-light);font-size:16px;padding:2px 6px;user-select:none;flex-shrink:0;}
+.drag-handle:active{cursor:grabbing;}
+.card.drag-over{border:2px dashed var(--pink-dark);background:var(--cream-dark);}
+.card.dragging{opacity:0.4;}
 </style>
 </head>
 <body>
@@ -151,8 +155,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--cream);color:var(--t
     </div>
     <div class="summary-row" id="summary"></div>
     <div class="tabs">
-      <button class="tab on" onclick="sw('today')">今日・今週</button>
-      <button class="tab" onclick="sw('all')">全体</button>
+      <button class="tab on" onclick="sw('all')">全体</button>
       <button class="tab" onclick="sw('done')">完了済み</button>
     </div>
     <div id="filter-area"></div>
@@ -190,9 +193,13 @@ let COACH='';
 function dataKey(){return 'dhit_v3_'+COACH;}
 function gasKey(){return 'dhit_gas_'+COACH;}
 function ld(){try{const s=localStorage.getItem(dataKey());return s?JSON.parse(s):{cs:[]};}catch{return{cs:[]};}}
-function sv(){try{localStorage.setItem(dataKey(),JSON.stringify(D));}catch{}}
+function sv(){
+  try{localStorage.setItem(dataKey(),JSON.stringify(D));}catch{}
+  try{localStorage.setItem(dataKey()+'_order',JSON.stringify(manualOrder));}catch{}
+}
 
-let D={cs:[]},tab='today',filterCid=null,showForm=false;
+let D={cs:[]},tab='all',filterCid=null,showForm=false;
+let sortMode='manual',manualOrder=[];
 let gasUrl='';
 
 function saveGas(){
@@ -224,7 +231,7 @@ async function postGas(action,task,studentName){
   if(!gasUrl||!COACH)return;
   const body=JSON.stringify({action,coachName:COACH,task:{id:task.id,studentName,label:task.lbl,action:task.act,date:task.date,memo:task.memo||'',priority:task.pri||'mid'}});
   const form=new FormData();form.append('data',body);
-  try{await fetch(gasUrl,{method:'POST',body:form});}catch(e){console.warn('GAS送信失敗',e);}
+  try{await fetch(gasUrl,{method:'POST',body:form,redirect:'follow'});}catch(e){console.warn('GAS送信失敗',e);}
 }
 
 async function loadFromGas(){
@@ -232,7 +239,7 @@ async function loadFromGas(){
   const btn=document.getElementById('load-btn');
   if(btn)btn.textContent='読み込み中...';
   try{
-    const res=await fetch(gasUrl+'?action=load&coach='+encodeURIComponent(COACH));
+    const res=await fetch(gasUrl+'?action=load&coach='+encodeURIComponent(COACH),{redirect:'follow',cache:'no-cache'});
     const json=await res.json();
     if(json.status==='ok'&&json.tasks.length>0){
       const deletedIds=JSON.parse(localStorage.getItem(dataKey()+'_deleted')||'[]');
@@ -288,6 +295,7 @@ function startFromInput(){
 function startApp(coachName){
   COACH=coachName;D=ld();
   gasUrl=localStorage.getItem(gasKey())||'';
+  manualOrder=JSON.parse(localStorage.getItem(dataKey()+'_order')||'[]');
   document.getElementById('setup-area').innerHTML='';
   document.getElementById('coach-badge').textContent=coachName;
   document.getElementById('coach-badge').style.display='';
@@ -295,7 +303,7 @@ function startApp(coachName){
   render();
 }
 
-function sw(t){tab=t;filterCid=null;document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('on',['today','all','done'][i]===t));render();}
+function sw(t){tab=t;filterCid=null;document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('on',['all','done'][i]===t));render();}
 function setFilter(cid){filterCid=filterCid===cid?null:cid;render();}
 
 function render(){renderAlert();renderSummary();renderFilter();renderContent();}
@@ -398,33 +406,72 @@ function saveEdit(cid,tid){
 
 function renderContent(){
   const el=document.getElementById('content');let h='';
-  if(tab==='today'){
-    const grps={ov:[],td:[],sn:[],wk:[]};
-    D.cs.forEach(c=>{if(filterCid!==null&&filterCid!==c.id)return;c.ts.forEach(t=>{if(t.dn)return;const d=du(t.date);if(d<0)grps.ov.push({c,t});else if(d===0)grps.td.push({c,t});else if(d<=2)grps.sn.push({c,t});else if(d<=7)grps.wk.push({c,t});});});
-    const priSort=(a,b)=>{const o={high:0,mid:1,low:2};return(o[a.t.pri||'mid']||1)-(o[b.t.pri||'mid']||1);};
-    grps.ov.sort(priSort);grps.td.sort(priSort);grps.sn.sort(priSort);grps.wk.sort(priSort);
-    if(grps.ov.length){h+='<div class="slbl">期限切れ</div>';grps.ov.forEach(x=>h+=tcard(x.c,x.t,'ov'));}
-    if(grps.td.length){h+='<div class="slbl">今日やること</div>';grps.td.forEach(x=>h+=tcard(x.c,x.t,'urg'));}
-    if(grps.sn.length){h+='<div class="slbl">明日・明後日</div>';grps.sn.forEach(x=>h+=tcard(x.c,x.t,''));}
-    if(grps.wk.length){h+='<div class="slbl">今週中</div>';grps.wk.forEach(x=>h+=tcard(x.c,x.t,''));}
-    if(!h)h='<div class="empty"><div class="empty-icon">🌸</div>今週のタスクはすべて完了しています</div>';
-  }else if(tab==='all'){
-    const targets=filterCid?D.cs.filter(c=>c.id===filterCid):D.cs;
-    targets.forEach(c=>{
-      const pend=c.ts.filter(t=>!t.dn).sort((a,b)=>{const o={high:0,mid:1,low:2};return(o[a.pri||'mid'])-(o[b.pri||'mid']);});
-      const cmemo=c.memo?`<div class="tmemo" style="margin-bottom:8px;">${c.memo}</div>`:'';
-      const tasks=pend.length?pend.map(t=>{
-        const d=du(t.date);const[bc,bl]=bdg(d);const tm=t.memo?`<div class="tmemo">${t.memo}</div>`:'';
-        return `<div style="padding:8px 0;border-top:1px solid var(--border);" id="card-${t.id}">
-          <div class="crow"><div class="chk${t.dn?' dn':''}" onclick="tog(${c.id},${t.id})">${t.dn?ck:''}</div>
-          <div class="tinfo"><div class="tlbl${t.dn?' dn':''}">${t.lbl}</div><div class="tact">→ ${t.act}</div>
-          <div class="tmeta">${priBdg(t.pri||'mid')}<span class="bdg ${bc}">${bl}</span><span class="tdate">${fmt(t.date)}</span><button class="sm-btn" onclick="openEdit(${c.id},${t.id})">編集</button><button class="del" onclick="delT(${c.id},${t.id})">削除</button></div>
-          ${tm}<div class="irow"><input class="memo-inp" id="mi${t.id}" placeholder="メモを追加..." value="${t.memo||''}"><button class="sm-btn" onclick="saveMemo(${c.id},${t.id})">保存</button></div>
-          </div></div></div>`;
-      }).join(''):'<div style="font-size:12px;color:var(--text-light);padding:6px 0;">未対応タスクなし</div>';
-      h+=`<div class="card" id="ccard-${c.id}"><div class="crow" style="margin-bottom:8px;">${dot(c.col)}<div class="tinfo"><div class="cname-h">${c.name}</div><div class="csub">${pend.length}件の未対応</div></div><button class="sm-btn" onclick="openEditCustomer(${c.id})">名前編集</button><button class="del" onclick="delC(${c.id})">削除</button></div>${cmemo}${tasks}</div>`;
+  if(tab==='all'){
+    // 全タスクをフラットに展開
+    let allTasks=[];
+    D.cs.forEach(c=>{
+      if(filterCid!==null&&filterCid!==c.id)return;
+      c.ts.forEach(t=>{if(!t.dn)allTasks.push({c,t});});
     });
-    if(!h)h='<div class="empty"><div class="empty-icon">✨</div>受講生が登録されていません</div>';
+    // 並び替え
+    if(sortMode==='date'){
+      allTasks.sort((a,b)=>a.t.date.localeCompare(b.t.date));
+    }else if(sortMode==='pri'){
+      const o={high:0,mid:1,low:2};
+      allTasks.sort((a,b)=>(o[a.t.pri||'mid'])-(o[b.t.pri||'mid']));
+    }else{
+      // 手動順: manualOrderに基づく
+      allTasks.sort((a,b)=>{
+        const ai=manualOrder.indexOf(String(a.t.id));
+        const bi=manualOrder.indexOf(String(b.t.id));
+        const ar=ai===-1?9999:ai;
+        const br=bi===-1?9999:bi;
+        return ar-br;
+      });
+    }
+    // 並び替えボタン
+    h+=`<div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;">
+      <button class="sm-btn${sortMode==='manual'?' sort-on':''}" onclick="setSort('manual')" style="${sortMode==='manual'?'background:var(--brown);color:var(--pink);border-color:var(--brown);':''}">✋ 手動順</button>
+      <button class="sm-btn${sortMode==='pri'?' sort-on':''}" onclick="setSort('pri')" style="${sortMode==='pri'?'background:var(--brown);color:var(--pink);border-color:var(--brown);':''}">🔺 優先度順</button>
+      <button class="sm-btn${sortMode==='date'?' sort-on':''}" onclick="setSort('date')" style="${sortMode==='date'?'background:var(--brown);color:var(--pink);border-color:var(--brown);':''}">📅 期限近い順</button>
+    </div>`;
+    if(!allTasks.length){
+      h+='<div class="empty"><div class="empty-icon">✨</div>未対応タスクはありません</div>';
+    }else{
+      allTasks.forEach(({c,t},idx)=>{
+        const d=du(t.date);const[bc,bl]=bdg(d);
+        const cls=d<0?'ov':d===0?'urg':'';
+        const tm=t.memo?`<div class="tmemo">${t.memo}</div>`:'';
+        const upBtn=idx>0?`<button class="sm-btn" onclick="moveTask('${t.id}',-1)" style="padding:4px 10px;font-size:13px;">↑</button>`:'<button class="sm-btn" style="padding:4px 10px;font-size:13px;opacity:0.3;" disabled>↑</button>';
+        const dnBtn=idx<allTasks.length-1?`<button class="sm-btn" onclick="moveTask('${t.id}',1)" style="padding:4px 10px;font-size:13px;">↓</button>`:'<button class="sm-btn" style="padding:4px 10px;font-size:13px;opacity:0.3;" disabled>↓</button>';
+        h+=`<div class="card ${cls}" id="card-${t.id}" draggable="true"
+          ondragstart="dragStart(event,'${t.id}')"
+          ondragover="dragOver(event)"
+          ondragleave="dragLeave(event)"
+          ondrop="dragDrop(event,'${t.id}')"
+          ondragend="dragEnd(event)"
+          ontouchstart="touchStart(event,'${t.id}')"
+          ontouchmove="touchMove(event)"
+          ontouchend="touchEnd(event,'${t.id}')">
+          <div class="crow">
+            <span class="drag-handle" title="ドラッグで並び替え">⠿</span>
+            <div class="chk${t.dn?' dn':''}" onclick="tog(${c.id},${t.id})">${t.dn?ck:''}</div>
+            ${dot(c.col)}
+            <div class="tinfo">
+              <div class="tlbl${t.dn?' dn':''}">${c.name}：${t.lbl}</div>
+              <div class="tact">→ ${t.act}</div>
+              <div class="tmeta">${priBdg(t.pri||'mid')}${repBdg(t.rep)}<span class="bdg ${bc}">${bl}</span><span class="tdate">${fmt(t.date)}</span>
+                <button class="sm-btn" onclick="openEdit(${c.id},${t.id})">編集</button>
+                <button class="del" onclick="delT(${c.id},${t.id})">削除</button>
+                ${upBtn}${dnBtn}
+              </div>
+              ${tm}
+              <div class="irow"><input class="memo-inp" id="mi${t.id}" placeholder="メモを追加..." value="${t.memo||''}"><button class="sm-btn" onclick="saveMemo(${c.id},${t.id})">保存</button></div>
+            </div>
+          </div>
+        </div>`;
+      });
+    }
   }else{
     const done=[];
     D.cs.forEach(c=>{if(filterCid!==null&&filterCid!==c.id)return;c.ts.forEach(t=>{if(t.dn)done.push({c,t});});});
@@ -554,6 +601,130 @@ function toggleForm(){
   }else{document.getElementById('addform').innerHTML='';}
 }
 function selChange(){document.getElementById('newc-fields').style.display=document.getElementById('f-sel').value?'none':'block';}
+function setSort(mode){
+  sortMode=mode;
+  if(mode!=='manual'){
+    // 現在の表示順をmanualOrderに記録
+    let allIds=[];
+    D.cs.forEach(c=>c.ts.forEach(t=>{if(!t.dn)allIds.push(String(t.id));}));
+    manualOrder=allIds;
+  }
+  sv();render();
+}
+function moveTask(tid,dir){
+  sortMode='manual';
+  let allTasks=[];
+  D.cs.forEach(c=>{
+    if(filterCid!==null&&filterCid!==c.id)return;
+    c.ts.forEach(t=>{if(!t.dn)allTasks.push({c,t});});
+  });
+  allTasks.sort((a,b)=>{
+    const ai=manualOrder.indexOf(String(a.t.id));
+    const bi=manualOrder.indexOf(String(b.t.id));
+    return(ai===-1?9999:ai)-(bi===-1?9999:bi);
+  });
+  const ids=allTasks.map(x=>String(x.t.id));
+  const idx=ids.indexOf(String(tid));
+  if(idx===-1)return;
+  const newIdx=idx+dir;
+  if(newIdx<0||newIdx>=ids.length)return;
+  [ids[idx],ids[newIdx]]=[ids[newIdx],ids[idx]];
+  manualOrder=ids;
+  sv();render();
+}
+
+// ===== ドラッグ&ドロップ =====
+let dragSrcId=null;
+
+function dragStart(e,tid){
+  dragSrcId=tid;
+  sortMode='manual';
+  e.dataTransfer.effectAllowed='move';
+  e.currentTarget.classList.add('dragging');
+}
+function dragOver(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  e.currentTarget.classList.add('drag-over');
+}
+function dragLeave(e){
+  e.currentTarget.classList.remove('drag-over');
+}
+function dragDrop(e,targetId){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if(!dragSrcId||dragSrcId===targetId)return;
+  swapTasks(dragSrcId,targetId);
+}
+function dragEnd(e){
+  e.currentTarget.classList.remove('dragging','drag-over');
+  dragSrcId=null;
+}
+
+function swapTasks(srcId,targetId){
+  // 現在の並び順を取得
+  let allTasks=[];
+  D.cs.forEach(c=>{
+    if(filterCid!==null&&filterCid!==c.id)return;
+    c.ts.forEach(t=>{if(!t.dn)allTasks.push({c,t});});
+  });
+  allTasks.sort((a,b)=>{
+    const ai=manualOrder.indexOf(String(a.t.id));
+    const bi=manualOrder.indexOf(String(b.t.id));
+    return(ai===-1?9999:ai)-(bi===-1?9999:bi);
+  });
+  const ids=allTasks.map(x=>String(x.t.id));
+  const si=ids.indexOf(String(srcId));
+  const ti=ids.indexOf(String(targetId));
+  if(si===-1||ti===-1)return;
+  ids.splice(si,1);
+  ids.splice(ti,0,String(srcId));
+  manualOrder=ids;
+  sv();render();
+}
+
+// ===== タッチドラッグ（スマホ） =====
+let touchSrcId=null,touchClone=null,touchStartY=0;
+
+function touchStart(e,tid){
+  // ハンドル部分のみドラッグ開始
+  if(!e.target.classList.contains('drag-handle'))return;
+  touchSrcId=tid;
+  sortMode='manual';
+  touchStartY=e.touches[0].clientY;
+  const card=e.currentTarget;
+  // 半透明クローン作成
+  touchClone=card.cloneNode(true);
+  touchClone.style.cssText='position:fixed;left:'+card.getBoundingClientRect().left+'px;top:'+card.getBoundingClientRect().top+'px;width:'+card.offsetWidth+'px;opacity:0.7;z-index:9999;pointer-events:none;';
+  document.body.appendChild(touchClone);
+  card.classList.add('dragging');
+  e.preventDefault();
+}
+function touchMove(e){
+  if(!touchSrcId||!touchClone)return;
+  const touch=e.touches[0];
+  touchClone.style.top=(touch.clientY-40)+'px';
+  e.preventDefault();
+}
+function touchEnd(e,tid){
+  if(!touchSrcId||!touchClone)return;
+  const touch=e.changedTouches[0];
+  // タッチ位置のカードを探す
+  touchClone.style.display='none';
+  const el=document.elementFromPoint(touch.clientX,touch.clientY);
+  touchClone.style.display='';
+  const targetCard=el?el.closest('[id^="card-"]'):null;
+  if(targetCard){
+    const targetId=targetCard.id.replace('card-','');
+    if(targetId!==touchSrcId)swapTasks(touchSrcId,targetId);
+  }
+  // クリーンアップ
+  touchClone.remove();
+  touchClone=null;
+  document.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging'));
+  touchSrcId=null;
+  render();
+}
 function toggleRepInput(prefix){
   const toggle=document.getElementById(prefix+'-rep-toggle')||document.getElementById('f-rep-toggle');
   const customDiv=document.getElementById(prefix+'-rep-custom')||document.getElementById('f-rep-custom');
