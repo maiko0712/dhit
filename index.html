@@ -671,10 +671,21 @@ function toggleForm(){
       </div>
       <div class="fg"><label>タスクメモ（任意）</label><textarea id="f-tmemo" placeholder="備考など"></textarea></div>
       <div class="form-actions">
-        <button class="btn-c" data-action="toggleForm">キャンセル</button>
-        <button class="btn-p" data-action="saveNew">追加する</button>
+        <button class="btn-c" id="btn-cancelform">キャンセル</button>
+        <button class="btn-p" id="btn-savenew">追加する</button>
       </div>
     </div>`;
+    // Safari対応：フォーム生成後にボタンへ直接イベント登録
+    const btnAdd=document.getElementById('btn-savenew');
+    const btnCancel=document.getElementById('btn-cancelform');
+    if(btnAdd){
+      btnAdd.addEventListener('click',function(e){e.stopPropagation();saveNew();});
+      btnAdd.addEventListener('touchend',function(e){e.stopPropagation();e.preventDefault();saveNew();},{passive:false});
+    }
+    if(btnCancel){
+      btnCancel.addEventListener('click',function(e){e.stopPropagation();toggleForm();});
+      btnCancel.addEventListener('touchend',function(e){e.stopPropagation();e.preventDefault();toggleForm();},{passive:false});
+    }
   }else{document.getElementById('addform').innerHTML='';}
 }
 function selChange(){document.getElementById('newc-fields').style.display=document.getElementById('f-sel').value?'none':'block';}
