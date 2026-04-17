@@ -318,9 +318,12 @@ async function loadFromGas(){
     const res=await fetch(gasUrl+'?action=load&coach='+encodeURIComponent(COACH),{redirect:'follow',cache:'no-cache'});
     const json=await res.json();
     if(json.status==='ok'){
-      // スプシのデータでローカルを完全上書き
+      // スプシのデータでローカルを完全上書き（既存データをクリア）
       const gasIds=(json.tasks||[]).map(t=>String(t.id));
       const customerMap={};
+      // 既存の色設定を保持するためにマップを作っておく
+      const oldColorMap={};
+      D.cs.forEach(c=>{oldColorMap[c.name]=c.col;});
 
       // タブ名変更に対応: スプシのstudentNameでタブを再構築
       (json.tasks||[]).forEach(t=>{
@@ -369,14 +372,17 @@ async function loadFromGas(){
 function init(){
   document.getElementById('tlbl').textContent=today.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
   // document全体でのイベント委譲（Safari対応）
+  let docBtnLock=false;
   function handleDocClick(e){
     const t=e.target;
     if(t.id==='btn-savenew'||t.closest('#btn-savenew')){
-      if(e.type==='touchend')e.preventDefault();
+      if(docBtnLock)return;
+      if(e.type==='touchend'){e.preventDefault();docBtnLock=true;setTimeout(()=>{docBtnLock=false;},500);}
       saveNew();return;
     }
     if(t.id==='btn-cancelform'||t.closest('#btn-cancelform')){
-      if(e.type==='touchend')e.preventDefault();
+      if(docBtnLock)return;
+      if(e.type==='touchend'){e.preventDefault();docBtnLock=true;setTimeout(()=>{docBtnLock=false;},500);}
       toggleForm();return;
     }
     if(!t.closest('.pill-wrap')&&!t.closest('#addbtn'))closeMenus();
