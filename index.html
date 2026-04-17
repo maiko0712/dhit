@@ -172,6 +172,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--cream);color:var(--t
 </div>
 
 <script>
+window.onerror=function(msg,src,line,col,err){
+  alert('JSエラー:\n'+msg+'\n行:'+line);
+  return true;
+};
 const DOTCOLS=['#C97A8E','#7B9E8C','#8B7BB5','#C4956A','#6B9EC4'];
 const today=new Date();today.setHours(0,0,0,0);
 const ck='<svg width="11" height="9" viewBox="0 0 11 9" fill="none"><polyline points="1,4.5 4,7.5 10,1" stroke="#F2C4CE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
