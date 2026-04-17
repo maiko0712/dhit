@@ -679,9 +679,8 @@ function toggleForm(){
     const btnAdd=document.getElementById('btn-savenew');
     const btnCancel=document.getElementById('btn-cancelform');
     if(btnAdd){
-      btnAdd.addEventListener('click',function(e){e.stopPropagation();alert('click fired!');saveNew();});
-      btnAdd.addEventListener('touchend',function(e){e.stopPropagation();e.preventDefault();alert('touchend fired!');saveNew();},{passive:false});
-      btnAdd.addEventListener('touchstart',function(e){alert('touchstart fired!');},{passive:true});
+      btnAdd.addEventListener('click',function(e){e.stopPropagation();saveNew();});
+      btnAdd.addEventListener('touchend',function(e){e.stopPropagation();e.preventDefault();saveNew();},{passive:false});
     }
     if(btnCancel){
       btnCancel.addEventListener('click',function(e){e.stopPropagation();toggleForm();});
@@ -824,6 +823,9 @@ function toggleRepInput(prefix){
 }
 async function saveNew(){
   const sel=document.getElementById('f-sel').value;
+  const task=document.getElementById('f-task')?document.getElementById('f-task').value.trim():'NO_TASK_EL';
+  const date=document.getElementById('f-date')?document.getElementById('f-date').value:'NO_DATE_EL';
+  alert('sel='+sel+' task='+task+' date='+date);
   const task=document.getElementById('f-task').value.trim();
   const date=document.getElementById('f-date').value;
   const act=document.getElementById('f-act').value.trim();
