@@ -608,6 +608,7 @@ function saveMemo(cid,tid){
 }
 
 function toggleForm(){
+  alert('toggleForm called! showForm='+showForm);
   showForm=!showForm;
   document.getElementById('addbtn').textContent=showForm?'✕ 閉じる':'＋ タスクを追加';
   if(showForm){
