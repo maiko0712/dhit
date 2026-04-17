@@ -737,7 +737,7 @@ function toggleForm(){
     while(sel.options.length>1)sel.remove(1);
     D.cs.forEach(c=>{
       const opt=document.createElement('option');
-      opt.value=c.id;
+      opt.value=String(c.id);
       opt.textContent=c.name;
       sel.appendChild(opt);
     });
@@ -904,7 +904,7 @@ async function saveNew(){
   const pri=getVal('f-pri')||'mid';
   if(!task||!date){alert('タスク内容と期日は必須です');return;}
   let c;
-  if(sel){c=D.cs.find(x=>x.id===parseInt(sel));}
+  if(sel){c=D.cs.find(x=>String(x.id)===String(sel));}
   else{
     const nameEl=document.getElementById('f-name');
     const cmemoEl=document.getElementById('f-cmemo');
