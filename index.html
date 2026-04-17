@@ -372,17 +372,14 @@ async function loadFromGas(){
 function init(){
   document.getElementById('tlbl').textContent=today.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
   // document全体でのイベント委譲（Safari対応）
-  let docBtnLock=false;
   function handleDocClick(e){
     const t=e.target;
     if(t.id==='btn-savenew'||t.closest('#btn-savenew')){
-      if(docBtnLock)return;
-      if(e.type==='touchend'){e.preventDefault();docBtnLock=true;setTimeout(()=>{docBtnLock=false;},500);}
+      if(e.type==='touchend')e.preventDefault();
       saveNew();return;
     }
     if(t.id==='btn-cancelform'||t.closest('#btn-cancelform')){
-      if(docBtnLock)return;
-      if(e.type==='touchend'){e.preventDefault();docBtnLock=true;setTimeout(()=>{docBtnLock=false;},500);}
+      if(e.type==='touchend')e.preventDefault();
       toggleForm();return;
     }
     if(!t.closest('.pill-wrap')&&!t.closest('#addbtn'))closeMenus();
@@ -894,7 +891,12 @@ async function saveNew(){
   // Safari対応: querySelectorで取得
   const formEl=document.getElementById('addform');
   const inputs=formEl?formEl.querySelectorAll('input,select,textarea'):{};
-  const getVal=id=>{const el=document.getElementById(id);return el?el.value:'';};
+  function getVal(id){
+    const el=document.getElementById(id);
+    if(!el)return '';
+    if(el.tagName==='SELECT')return el.options[el.selectedIndex]?el.options[el.selectedIndex].value:'';
+    return el.value||'';
+  }
   const sel=getVal('f-sel');
   const task=getVal('f-task').trim();
   const date=getVal('f-date');
