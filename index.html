@@ -894,8 +894,7 @@ async function saveNew(){
   function getVal(id){
     const el=document.getElementById(id);
     if(!el)return '';
-    if(el.tagName==='SELECT')return el.options[el.selectedIndex]?el.options[el.selectedIndex].value:'';
-    return el.value||'';
+    return el.value!==undefined?el.value:'';
   }
   const sel=getVal('f-sel');
   const task=getVal('f-task').trim();
