@@ -167,7 +167,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:
     </div>
     <div id="filter-area"></div>
     <div id="content"></div>
-    <div id="addform" style="display:none;">
+    <div id="addform" style="visibility:hidden;height:0;overflow:hidden;margin:0;padding:0;">
       <div class="form-card">
         <h4>＋ タスクを追加</h4>
         <div class="fg"><label>タブの選択（新規の場合は下に入力）</label>
@@ -692,7 +692,19 @@ function toggleForm(){
   showForm=!showForm;
   document.getElementById('addbtn').textContent=showForm?'✕ 閉じる':'＋ タスクを追加';
   const addformEl=document.getElementById('addform');
-  addformEl.style.display=showForm?'block':'none';
+  if(showForm){
+    addformEl.style.visibility='visible';
+    addformEl.style.height='auto';
+    addformEl.style.overflow='visible';
+    addformEl.style.margin='';
+    addformEl.style.padding='';
+  }else{
+    addformEl.style.visibility='hidden';
+    addformEl.style.height='0';
+    addformEl.style.overflow='hidden';
+    addformEl.style.margin='0';
+    addformEl.style.padding='0';
+  }
   if(showForm){
     // タブ選択肢を更新
     const sel=document.getElementById('f-sel');
@@ -850,9 +862,6 @@ function toggleRepInput(prefix){
   customDiv.style.display=toggle.value==='none'?'none':'flex';
 }
 async function saveNew(){
-  const dbgTask=document.getElementById('f-task');
-  const dbgDate=document.getElementById('f-date');
-  alert('task='+JSON.stringify(dbgTask?dbgTask.value:'null')+' date='+JSON.stringify(dbgDate?dbgDate.value:'null'));
   // フォームの値を取得（要素が存在するか確認）
   const selEl=document.getElementById('f-sel');
   const taskEl=document.getElementById('f-task');
