@@ -286,15 +286,19 @@ async function loadFromGas(){
 function init(){
   document.getElementById('tlbl').textContent=today.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
   // addbtnのイベント（Safari対応）
-  document.getElementById('addbtn').addEventListener('click',function(e){
-    e.stopPropagation();
-    toggleForm();
-  });
+  let addbtnTouched=false;
   document.getElementById('addbtn').addEventListener('touchend',function(e){
     e.stopPropagation();
     e.preventDefault();
+    addbtnTouched=true;
     toggleForm();
+    setTimeout(()=>{addbtnTouched=false;},300);
   },{passive:false});
+  document.getElementById('addbtn').addEventListener('click',function(e){
+    e.stopPropagation();
+    if(addbtnTouched)return; // touchendで処理済みの場合スキップ
+    toggleForm();
+  });
   // pill-wrap外タップ/クリックでメニューを閉じる
   document.addEventListener('click',function(e){
     if(!e.target.closest('.pill-wrap')&&!e.target.closest('#addbtn'))closeMenus();
@@ -608,12 +612,10 @@ function saveMemo(cid,tid){
 }
 
 function toggleForm(){
+  alert('toggleForm! showForm before='+showForm);
   showForm=!showForm;
   document.getElementById('addbtn').textContent=showForm?'✕ 閉じる':'＋ タスクを追加';
   if(showForm){
-    const addformEl=document.getElementById('addform');
-    if(!addformEl){alert('ERROR: addform not found!');return;}
-    alert('addform found. main-ui display='+document.getElementById('main-ui').style.display);
     const ts=today.toISOString().split('T')[0];
     const opts=D.cs.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
     document.getElementById('addform').innerHTML=`<div class="form-card" id="the-form-card">
