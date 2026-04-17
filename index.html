@@ -608,10 +608,12 @@ function saveMemo(cid,tid){
 }
 
 function toggleForm(){
-  alert('toggleForm called! showForm='+showForm);
   showForm=!showForm;
   document.getElementById('addbtn').textContent=showForm?'✕ 閉じる':'＋ タスクを追加';
   if(showForm){
+    const addformEl=document.getElementById('addform');
+    if(!addformEl){alert('ERROR: addform not found!');return;}
+    alert('addform found. main-ui display='+document.getElementById('main-ui').style.display);
     const ts=today.toISOString().split('T')[0];
     const opts=D.cs.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
     document.getElementById('addform').innerHTML=`<div class="form-card" id="the-form-card">
