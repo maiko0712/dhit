@@ -285,7 +285,13 @@ async function loadFromGas(){
 
 function init(){
   document.getElementById('tlbl').textContent=today.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
-  document.addEventListener('click',closeMenus);
+  // pill-wrap外タップ/クリックでメニューを閉じる
+  document.addEventListener('click',function(e){
+    if(!e.target.closest('.pill-wrap'))closeMenus();
+  });
+  document.addEventListener('touchend',function(e){
+    if(!e.target.closest('.pill-wrap'))closeMenus();
+  },{passive:true});
   const urlCoach=getCoachFromUrl();
   if(urlCoach){startApp(urlCoach);}
   else{
@@ -360,8 +366,7 @@ function pillClick(e,cid){
   closeMenus();
   if(!isOpen)menu.classList.add('open');
 }
-function closeMenus(e){
-  if(e&&e.target&&e.target.closest&&e.target.closest('.pill-wrap'))return;
+function closeMenus(){
   document.querySelectorAll('.pill-menu').forEach(m=>m.classList.remove('open'));
 }
 
