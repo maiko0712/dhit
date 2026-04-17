@@ -233,9 +233,15 @@ function toggleGasForm(){
   f.style.display=f.style.display==='none'?'block':'none';
   if(f.style.display==='block'&&gasUrl)document.getElementById('gas-url').value=gasUrl;
 }
-async function postGas(action,task,studentName){
+async function postGas(action,task,studentName,extra){
   if(!gasUrl||!COACH)return;
-  const body=JSON.stringify({action,coachName:COACH,task:{id:task.id,studentName,label:task.lbl,action:task.act,date:task.date,memo:task.memo||'',priority:task.pri||'mid'}});
+  const body=JSON.stringify({action,coachName:COACH,task:{id:task.id,studentName,label:task.lbl,action:task.act,date:task.date,memo:task.memo||'',priority:task.pri||'mid',repeat:task.rep||'none'},...(extra||{})});
+  const form=new FormData();form.append('data',body);
+  try{await fetch(gasUrl,{method:'POST',body:form,redirect:'follow'});}catch(e){console.warn('GAS送信失敗',e);}
+}
+async function postGasRaw(payload){
+  if(!gasUrl||!COACH)return;
+  const body=JSON.stringify({coachName:COACH,...payload});
   const form=new FormData();form.append('data',body);
   try{await fetch(gasUrl,{method:'POST',body:form,redirect:'follow'});}catch(e){console.warn('GAS送信失敗',e);}
 }
@@ -260,9 +266,11 @@ async function loadFromGas(){
         const c=customerMap[t.studentName];
         const exists=c.ts.find(x=>String(x.id)===String(t.id));
         if(!exists){
-          c.ts.push({id:t.id,date:t.date,lbl:t.label,act:t.action,memo:t.memo||'',pri:'mid',dn:t.status==='完了'});
+          c.ts.push({id:t.id,date:t.date,lbl:t.label,act:t.action,memo:t.memo||'',pri:t.priority||'mid',rep:t.repeat||'none',dn:t.status==='完了'});
         }
       });
+      // 並び順を反映
+      if(json.order&&json.order.length>0)manualOrder=json.order;
       sv();render();
       if(btn)btn.textContent='✅ 読み込み完了';
     }else{
@@ -428,6 +436,7 @@ function saveEdit(cid,tid){
   t.memo=document.getElementById('e-memo-'+tid).value.trim();
   const eRepToggle=document.getElementById('e-rep-toggle-'+tid).value;
   t.rep=eRepToggle==='none'?'none':document.getElementById('e-rep-num-'+tid).value+document.getElementById('e-rep-unit-'+tid).value;
+  postGas('update',t,c.name);
   sv();render();
 }
 
@@ -559,9 +568,11 @@ function saveEditCustomer(cid){
   if(!inp)return;
   const newName=inp.value.trim();
   if(!newName){alert('タブ名を入力してください');return;}
+  const oldName=c.name;
   c.name=newName;
   const modal=document.getElementById('customer-modal');
   if(modal)modal.remove();
+  postGasRaw({action:'renameTab',oldName,newName});
   sv();render();
 }
 
@@ -669,6 +680,8 @@ function moveTask(tid,dir){
   [ids[idx],ids[newIdx]]=[ids[newIdx],ids[idx]];
   manualOrder=ids;
   sv();render();
+  // 並び順をスプシに送信
+  postGasRaw({action:'updateOrder',order:ids});
 }
 
 // ===== ドラッグ&ドロップ =====
