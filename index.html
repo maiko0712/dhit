@@ -650,6 +650,9 @@ function renderContent(){
 async function tog(cid,tid){
   const c=D.cs.find(x=>x.id===cid);const t=c.ts.find(x=>x.id===tid);
   t.dn=!t.dn;
+  if(!t.dn){
+    await postGas('uncomplete',t,c.name);
+  }
   if(t.dn){
     await postGas('complete',t,c.name);
     if(t.rep&&t.rep!=='none'){
@@ -836,6 +839,7 @@ function swapTasks(srcId,targetId){
   ids.splice(ti,0,String(srcId));
   manualOrder=ids;
   sv();render();
+  postGasRaw({action:'updateOrder',order:ids});
 }
 
 // ===== タッチドラッグ（スマホ） =====
