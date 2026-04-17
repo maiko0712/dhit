@@ -283,15 +283,31 @@ function toggleGasForm(){
 }
 async function postGas(action,task,studentName,extra){
   if(!gasUrl||!COACH)return;
-  const body=JSON.stringify({action,coachName:COACH,task:{id:task.id,studentName,label:task.lbl,action:task.act,date:task.date,memo:task.memo||'',priority:task.pri||'mid',repeat:task.rep||'none'},...(extra||{})});
-  const form=new FormData();form.append('data',body);
-  try{await fetch(gasUrl,{method:'POST',body:form,redirect:'follow'});}catch(e){console.warn('GAS送信失敗',e);}
+  const payload={action,coachName:COACH,task:{id:task.id,studentName,label:task.lbl,action:task.act,date:task.date,memo:task.memo||'',priority:task.pri||'mid',repeat:task.rep||'none'},...(extra||{})};
+  await sendToGas(payload);
 }
 async function postGasRaw(payload){
   if(!gasUrl||!COACH)return;
-  const body=JSON.stringify({coachName:COACH,...payload});
-  const form=new FormData();form.append('data',body);
-  try{await fetch(gasUrl,{method:'POST',body:form,redirect:'follow'});}catch(e){console.warn('GAS送信失敗',e);}
+  await sendToGas({coachName:COACH,...payload});
+}
+async function sendToGas(payload){
+  const body=JSON.stringify(payload);
+  // FormDataとJSONの両方を試みる（Safari対応）
+  try{
+    const form=new FormData();
+    form.append('data',body);
+    const res=await fetch(gasUrl,{method:'POST',body:form,redirect:'follow'});
+    if(res.ok||res.type==='opaque')return;
+  }catch(e1){console.warn('FormData失敗',e1);}
+  // フォールバック: URLエンコード
+  try{
+    await fetch(gasUrl,{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:'data='+encodeURIComponent(body),
+      redirect:'follow'
+    });
+  }catch(e2){console.warn('GAS送信失敗',e2);}
 }
 
 async function loadFromGas(){
