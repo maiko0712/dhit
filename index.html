@@ -676,7 +676,7 @@ function toggleForm(){
       </div>
     </div>`;
     // Safari対応：フォーム生成後にボタンへ直接イベント登録
-    const btnAdd=document.getElementById('btn-savenew');
+    const btnAdd=document.getElementById('btn-savenew');alert('form generated, btnAdd='+(btnAdd?'found':'NOT FOUND'));
     const btnCancel=document.getElementById('btn-cancelform');
     if(btnAdd){
       btnAdd.addEventListener('click',function(e){e.stopPropagation();saveNew();});
@@ -821,7 +821,7 @@ function toggleRepInput(prefix){
   if(!toggle||!customDiv)return;
   customDiv.style.display=toggle.value==='none'?'none':'flex';
 }
-async function saveNew(){
+async function saveNew(){alert('saveNew called!');
   const sel=document.getElementById('f-sel').value;
   const task=document.getElementById('f-task').value.trim();
   const date=document.getElementById('f-date').value;
