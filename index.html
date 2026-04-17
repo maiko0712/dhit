@@ -24,6 +24,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Noto Sans JP',sans-serif;background:var(--cream);color:var(--text);font-size:14px;min-height:100vh;}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer;}
 .top-bar{background:var(--pink);padding:0 1.2rem;display:flex;align-items:center;justify-content:space-between;height:52px;}
 .logo-area{display:flex;align-items:center;gap:10px;}
 .logo-svg{width:28px;height:28px;}
@@ -108,10 +109,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--cream);color:var(--t
 .fgrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .fgrow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 .form-actions{display:flex;gap:8px;margin-top:1rem;}
-.btn-p{padding:9px 22px;background:var(--brown);border:none;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;color:var(--pink);font-family:'Noto Sans JP',sans-serif;transition:opacity .2s;}
+.btn-p{padding:9px 22px;background:var(--brown);border:none;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;color:var(--pink);font-family:'Noto Sans JP',sans-serif;transition:opacity .2s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 .btn-p:hover{opacity:.85;}
-.btn-c{padding:9px 16px;background:transparent;border:1.5px solid var(--border);border-radius:10px;font-size:13px;cursor:pointer;color:var(--text-mid);font-family:'Noto Sans JP',sans-serif;}
-.open-btn{width:100%;padding:12px;border:2px dashed var(--pink);border-radius:14px;background:transparent;cursor:pointer;font-size:13px;color:var(--pink-dark);margin-top:.5rem;font-family:'Noto Sans JP',sans-serif;font-weight:500;transition:all .2s;}
+.btn-c{padding:9px 16px;background:transparent;border:1.5px solid var(--border);border-radius:10px;font-size:13px;cursor:pointer;color:var(--text-mid);font-family:'Noto Sans JP',sans-serif;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.open-btn{width:100%;padding:12px;border:2px dashed var(--pink);border-radius:14px;background:transparent;cursor:pointer;font-size:13px;color:var(--pink-dark);margin-top:.5rem;font-family:'Noto Sans JP',sans-serif;font-weight:500;transition:all .2s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 .open-btn:hover{background:var(--cream-dark);}
 .cname-h{font-size:14px;font-weight:700;color:var(--brown);}
 .csub{font-size:12px;color:var(--text-light);}
