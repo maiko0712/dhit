@@ -24,7 +24,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Noto Sans JP',sans-serif;background:var(--cream);color:var(--text);font-size:14px;min-height:100vh;}
-button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer;}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer;-webkit-user-select:none;user-select:none;}
 .top-bar{background:var(--pink);padding:0 1.2rem;display:flex;align-items:center;justify-content:space-between;height:52px;}
 .logo-area{display:flex;align-items:center;gap:10px;}
 .logo-svg{width:28px;height:28px;}
@@ -850,6 +850,9 @@ function toggleRepInput(prefix){
   customDiv.style.display=toggle.value==='none'?'none':'flex';
 }
 async function saveNew(){
+  const dbgTask=document.getElementById('f-task');
+  const dbgDate=document.getElementById('f-date');
+  alert('task='+JSON.stringify(dbgTask?dbgTask.value:'null')+' date='+JSON.stringify(dbgDate?dbgDate.value:'null'));
   // フォームの値を取得（要素が存在するか確認）
   const selEl=document.getElementById('f-sel');
   const taskEl=document.getElementById('f-task');
