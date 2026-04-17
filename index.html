@@ -822,26 +822,39 @@ function toggleRepInput(prefix){
   customDiv.style.display=toggle.value==='none'?'none':'flex';
 }
 async function saveNew(){
-  const sel=document.getElementById('f-sel').value;
-  const task=document.getElementById('f-task')?document.getElementById('f-task').value.trim():'NO_TASK_EL';
-  const date=document.getElementById('f-date')?document.getElementById('f-date').value:'NO_DATE_EL';
-  alert('sel='+sel+' task='+task+' date='+date);
-  const task=document.getElementById('f-task').value.trim();
-  const date=document.getElementById('f-date').value;
-  const act=document.getElementById('f-act').value.trim();
-  const tmemo=document.getElementById('f-tmemo').value.trim();
-  const pri=document.getElementById('f-pri').value;
+  // フォームの値を取得（要素が存在するか確認）
+  const selEl=document.getElementById('f-sel');
+  const taskEl=document.getElementById('f-task');
+  const dateEl=document.getElementById('f-date');
+  const actEl=document.getElementById('f-act');
+  const tmemoEl=document.getElementById('f-tmemo');
+  const priEl=document.getElementById('f-pri');
+  if(!selEl||!taskEl||!dateEl){
+    alert('フォームの読み込みに失敗しました。もう一度お試しください。');
+    return;
+  }
+  const sel=selEl.value;
+  const task=taskEl.value.trim();
+  const date=dateEl.value;
+  const act=actEl?actEl.value.trim():'';
+  const tmemo=tmemoEl?tmemoEl.value.trim():'';
+  const pri=priEl?priEl.value:'mid';
   if(!task||!date){alert('タスク内容と期日は必須です');return;}
   let c;
   if(sel){c=D.cs.find(x=>x.id===parseInt(sel));}
   else{
-    const name=document.getElementById('f-name').value.trim();
-    const cmemo=document.getElementById('f-cmemo').value.trim();
+    const nameEl=document.getElementById('f-name');
+    const cmemoEl=document.getElementById('f-cmemo');
+    const name=nameEl?nameEl.value.trim():'';
+    const cmemo=cmemoEl?cmemoEl.value.trim():'';
     if(!name){alert('タブ名を入力してください');return;}
     c={id:Date.now(),name,col:D.cs.length%5,memo:cmemo,ts:[]};D.cs.push(c);
   }
-  const fRepToggle=document.getElementById('f-rep-toggle').value;
-  const rep=fRepToggle==='none'?'none':document.getElementById('f-rep-num').value+document.getElementById('f-rep-unit').value;
+  const repToggleEl=document.getElementById('f-rep-toggle');
+  const fRepToggle=repToggleEl?repToggleEl.value:'none';
+  const repNumEl=document.getElementById('f-rep-num');
+  const repUnitEl=document.getElementById('f-rep-unit');
+  const rep=fRepToggle==='none'?'none':(repNumEl&&repUnitEl?repNumEl.value+repUnitEl.value:'none');
   const newTask={id:Date.now()+1,date,lbl:task,act:act||'対応予定',memo:tmemo,pri,rep,dn:false};
   c.ts.push(newTask);
   await postGas('add',newTask,c.name);
