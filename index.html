@@ -301,22 +301,25 @@ async function loadFromGas(){
   try{
     const res=await fetch(gasUrl+'?action=load&coach='+encodeURIComponent(COACH),{redirect:'follow',cache:'no-cache'});
     const json=await res.json();
-    if(json.status==='ok'&&json.tasks.length>0){
-      const deletedIds=JSON.parse(localStorage.getItem(dataKey()+'_deleted')||'[]');
+    if(json.status==='ok'){
+      // スプシのデータでローカルを完全上書き
+      const gasIds=(json.tasks||[]).map(t=>String(t.id));
       const customerMap={};
-      json.tasks.forEach(t=>{
-        if(deletedIds.includes(String(t.id)))return;
+
+      // タブ名変更に対応: スプシのstudentNameでタブを再構築
+      (json.tasks||[]).forEach(t=>{
         if(!customerMap[t.studentName]){
+          // 既存タブを探す（IDで照合）
           const existing=D.cs.find(c=>c.name===t.studentName);
           customerMap[t.studentName]=existing||{id:Date.now()+Math.random(),name:t.studentName,col:Object.keys(customerMap).length%5,memo:'',ts:[]};
-          if(!existing)D.cs.push(customerMap[t.studentName]);
         }
         const c=customerMap[t.studentName];
         const exists=c.ts.find(x=>String(x.id)===String(t.id));
         if(!exists){
+          // 新規タスクを追加
           c.ts.push({id:t.id,date:t.date,lbl:t.label,act:t.action,memo:t.memo||'',pri:t.priority||'mid',rep:t.repeat||'none',dn:t.status==='完了'});
         }else{
-          // 既存タスクのステータス・内容をスプシから更新
+          // 全フィールドをスプシで上書き
           exists.dn=t.status==='完了';
           exists.lbl=t.label;
           exists.act=t.action;
@@ -326,19 +329,19 @@ async function loadFromGas(){
           exists.date=t.date;
         }
       });
-      // スプシに存在しないタスクをローカルから削除
-      const gasIds=json.tasks.map(t=>String(t.id));
-      D.cs.forEach(c=>{
+
+      // スプシにないタスクをローカルから削除
+      Object.values(customerMap).forEach(c=>{
         c.ts=c.ts.filter(t=>gasIds.includes(String(t.id)));
       });
-      // 空になったタブを削除
-      D.cs=D.cs.filter(c=>c.ts.length>0);
+
+      // ローカルのD.csをcustomerMapで完全置き換え
+      D.cs=Object.values(customerMap).filter(c=>c.ts.length>0);
+
       // 並び順を反映
       if(json.order&&json.order.length>0)manualOrder=json.order;
       sv();render();
       if(btn)btn.textContent='✅ 読み込み完了';
-    }else{
-      if(btn)btn.textContent='データなし';
     }
   }catch(e){
     console.warn('読み込み失敗',e);
@@ -856,7 +859,7 @@ function toggleRepInput(prefix){
   if(!toggle||!customDiv)return;
   customDiv.style.display=toggle.value==='none'?'none':'flex';
 }
-async function saveNew(){alert('task='+JSON.stringify(document.getElementById('f-task')?document.getElementById('f-task').value:'NULL'));
+async function saveNew(){
   // フォームの値を取得（要素が存在するか確認）
   // Safari対応: querySelectorで取得
   const formEl=document.getElementById('addform');
