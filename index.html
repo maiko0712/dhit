@@ -167,7 +167,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--cream);color:var(--t
     <div id="filter-area"></div>
     <div id="content"></div>
     <div id="addform"></div>
-    <button class="open-btn" id="addbtn" onclick="toggleForm()">＋ タスクを追加</button>
+    <button class="open-btn" id="addbtn" onclick="event.stopPropagation();toggleForm()">＋ タスクを追加</button>
   </div>
 </div>
 
@@ -283,8 +283,8 @@ function init(){
   else{
     document.getElementById('setup-area').innerHTML=`
       <div class="setup-box">
-        <h3>はじめに名前を入力してください</h3>
-        <p>管理者からURLを受け取った場合はそのURLを開いてください。<br>自分で設定する場合は名前を入力してください。</p>
+        <h3>はじめにタブ名を入力してください</h3>
+        <p>管理者からURLを受け取った場合はそのURLを開いてください。<br>自分で設定する場合はタブ名を入力してください。</p>
         <input class="setup-inp" id="name-inp" type="text" placeholder="例：まいこ">
         <button class="setup-btn" onclick="startFromInput()">はじめる</button>
       </div>`;
@@ -293,7 +293,7 @@ function init(){
 
 function startFromInput(){
   const name=document.getElementById('name-inp').value.trim();
-  if(!name){alert('名前を入力してください');return;}
+  if(!name){alert('タブ名を入力してください');return;}
   const url=new URL(window.location.href);url.searchParams.set('coach',name);
   window.history.replaceState({},'',url.toString());
   startApp(name);
@@ -337,7 +337,7 @@ function renderFilter(){
     <div class="pill-wrap">
       <button class="fpill${filterCid===c.id?' on':''}" onclick="pillClick(event,${c.id})">${c.name}</button>
       <div class="pill-menu" id="pmenu-${c.id}">
-        <button onclick="setFilter(${c.id});closeMenus()">🔍 この受講生で絞込</button>
+        <button onclick="setFilter(${c.id});closeMenus()">🔍 こので絞込</button>
         <button onclick="openEditCustomer(${c.id});closeMenus()">✏️ 名前を編集</button>
         <button class="danger" onclick="delC(${c.id});closeMenus()">🗑 受講生を削除</button>
       </div>
@@ -352,7 +352,8 @@ function pillClick(e,cid){
   closeMenus();
   if(!isOpen)menu.classList.add('open');
 }
-function closeMenus(){
+function closeMenus(e){
+  if(e&&e.target&&e.target.closest&&e.target.closest('.pill-wrap'))return;
   document.querySelectorAll('.pill-menu').forEach(m=>m.classList.remove('open'));
 }
 
@@ -540,7 +541,7 @@ function openEditCustomer(cid){
   modal.id='customer-modal';
   modal.style.cssText='position:fixed;inset:0;background:rgba(30,21,17,.4);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem;';
   modal.innerHTML=`<div style="background:var(--white);border-radius:16px;padding:1.5rem;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(30,21,17,.2);">
-    <div style="font-size:13px;font-weight:700;color:var(--brown);margin-bottom:1rem;">受講生名を編集</div>
+    <div style="font-size:13px;font-weight:700;color:var(--brown);margin-bottom:1rem;">タブ名を編集</div>
     <input id="cn-inp-${cid}" type="text" value="${c.name}" style="width:100%;font-size:14px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--pink-dark);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;outline:none;margin-bottom:1rem;">
     <div style="display:flex;gap:8px;">
       <button class="btn-p" style="flex:1;" onclick="saveEditCustomer(${cid})">保存</button>
@@ -557,7 +558,7 @@ function saveEditCustomer(cid){
   const inp=document.getElementById('cn-inp-'+cid);
   if(!inp)return;
   const newName=inp.value.trim();
-  if(!newName){alert('名前を入力してください');return;}
+  if(!newName){alert('タブ名を入力してください');return;}
   c.name=newName;
   const modal=document.getElementById('customer-modal');
   if(modal)modal.remove();
@@ -576,7 +577,7 @@ function delT(cid,tid){
   c.ts=c.ts.filter(x=>x.id!==tid);
   sv();render();
 }
-function delC(cid){if(!confirm('この受講生を削除しますか？'))return;D.cs=D.cs.filter(c=>c.id!==cid);if(filterCid===cid)filterCid=null;sv();render();}
+function delC(cid){if(!confirm('このタブを削除しますか？'))return;D.cs=D.cs.filter(c=>c.id!==cid);if(filterCid===cid)filterCid=null;sv();render();}
 function saveMemo(cid,tid){
   const inp=document.getElementById('mi'+tid);if(!inp)return;
   const c=D.cs.find(x=>x.id===cid);const t=c.ts.find(x=>x.id===tid);
@@ -589,16 +590,16 @@ function toggleForm(){
   if(showForm){
     const ts=today.toISOString().split('T')[0];
     const opts=D.cs.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-    document.getElementById('addform').innerHTML=`<div class="form-card">
+    document.getElementById('addform').innerHTML=`<div class="form-card" onclick="event.stopPropagation()">
       <h4>＋ タスクを追加</h4>
-      <div class="fg"><label>受講生の選択（新規の場合は下に入力）</label>
+      <div class="fg"><label>タブの選択（新規の場合は下に入力）</label>
         <select id="f-sel" onchange="selChange()" style="width:100%;font-size:13px;padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;">
-          <option value="">＋ 新規受講生を追加</option>${opts}
+          <option value="">＋ 新規タブを追加</option>${opts}
         </select>
       </div>
       <div id="newc-fields">
-        <div class="fg"><label>氏名</label><input id="f-name" type="text" placeholder="例：田中 さくら"></div>
-        <div class="fg"><label>メモ（任意）</label><input id="f-cmemo" type="text" placeholder="例：進捗が遅れ気味"></div>
+        <div class="fg"><label>タブ名</label><input id="f-name" type="text" placeholder="例：受講生名、仕事、プライベート"></div>
+        <div class="fg"><label>メモ（任意）</label><input id="f-cmemo" type="text" placeholder="例：メモ"></div>
       </div>
       <hr class="sdiv">
       <div class="fg"><label>タスク内容</label><input id="f-task" type="text" placeholder="例：商談ロープレ、お手紇20件送付"></div>
@@ -781,7 +782,7 @@ async function saveNew(){
   else{
     const name=document.getElementById('f-name').value.trim();
     const cmemo=document.getElementById('f-cmemo').value.trim();
-    if(!name){alert('氏名を入力してください');return;}
+    if(!name){alert('タブ名を入力してください');return;}
     c={id:Date.now(),name,col:D.cs.length%5,memo:cmemo,ts:[]};D.cs.push(c);
   }
   const fRepToggle=document.getElementById('f-rep-toggle').value;
