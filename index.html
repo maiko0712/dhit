@@ -856,7 +856,7 @@ function toggleRepInput(prefix){
   if(!toggle||!customDiv)return;
   customDiv.style.display=toggle.value==='none'?'none':'flex';
 }
-async function saveNew(){alert('saveNew!');
+async function saveNew(){alert('task='+JSON.stringify(document.getElementById('f-task')?document.getElementById('f-task').value:'NULL'));
   // フォームの値を取得（要素が存在するか確認）
   // Safari対応: querySelectorで取得
   const formEl=document.getElementById('addform');
