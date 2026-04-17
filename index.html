@@ -167,7 +167,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:
     </div>
     <div id="filter-area"></div>
     <div id="content"></div>
-    <div id="addform" style="visibility:hidden;height:0;overflow:hidden;margin:0;padding:0;">
+    <div id="addform" style="display:none;">
       <div class="form-card">
         <h4>＋ タスクを追加</h4>
         <div class="fg"><label>タブの選択（新規の場合は下に入力）</label>
@@ -326,6 +326,13 @@ async function loadFromGas(){
           exists.date=t.date;
         }
       });
+      // スプシに存在しないタスクをローカルから削除
+      const gasIds=json.tasks.map(t=>String(t.id));
+      D.cs.forEach(c=>{
+        c.ts=c.ts.filter(t=>gasIds.includes(String(t.id)));
+      });
+      // 空になったタブを削除
+      D.cs=D.cs.filter(c=>c.ts.length>0);
       // 並び順を反映
       if(json.order&&json.order.length>0)manualOrder=json.order;
       sv();render();
@@ -692,19 +699,7 @@ function toggleForm(){
   showForm=!showForm;
   document.getElementById('addbtn').textContent=showForm?'✕ 閉じる':'＋ タスクを追加';
   const addformEl=document.getElementById('addform');
-  if(showForm){
-    addformEl.style.visibility='visible';
-    addformEl.style.height='auto';
-    addformEl.style.overflow='visible';
-    addformEl.style.margin='';
-    addformEl.style.padding='';
-  }else{
-    addformEl.style.visibility='hidden';
-    addformEl.style.height='0';
-    addformEl.style.overflow='hidden';
-    addformEl.style.margin='0';
-    addformEl.style.padding='0';
-  }
+  addformEl.style.display=showForm?'block':'none';
   if(showForm){
     // タブ選択肢を更新
     const sel=document.getElementById('f-sel');
@@ -861,24 +856,18 @@ function toggleRepInput(prefix){
   if(!toggle||!customDiv)return;
   customDiv.style.display=toggle.value==='none'?'none':'flex';
 }
-async function saveNew(){
+async function saveNew(){alert('task='+JSON.stringify(document.getElementById('f-task')?document.getElementById('f-task').value:'NULL'));
   // フォームの値を取得（要素が存在するか確認）
-  const selEl=document.getElementById('f-sel');
-  const taskEl=document.getElementById('f-task');
-  const dateEl=document.getElementById('f-date');
-  const actEl=document.getElementById('f-act');
-  const tmemoEl=document.getElementById('f-tmemo');
-  const priEl=document.getElementById('f-pri');
-  if(!selEl||!taskEl||!dateEl){
-    alert('フォームの読み込みに失敗しました。もう一度お試しください。');
-    return;
-  }
-  const sel=selEl.value;
-  const task=taskEl.value.trim();
-  const date=dateEl.value;
-  const act=actEl?actEl.value.trim():'';
-  const tmemo=tmemoEl?tmemoEl.value.trim():'';
-  const pri=priEl?priEl.value:'mid';
+  // Safari対応: querySelectorで取得
+  const formEl=document.getElementById('addform');
+  const inputs=formEl?formEl.querySelectorAll('input,select,textarea'):{};
+  const getVal=id=>{const el=document.getElementById(id);return el?el.value:'';};
+  const sel=getVal('f-sel');
+  const task=getVal('f-task').trim();
+  const date=getVal('f-date');
+  const act=getVal('f-act').trim();
+  const tmemo=getVal('f-tmemo').trim();
+  const pri=getVal('f-pri')||'mid';
   if(!task||!date){alert('タスク内容と期日は必須です');return;}
   let c;
   if(sel){c=D.cs.find(x=>x.id===parseInt(sel));}
