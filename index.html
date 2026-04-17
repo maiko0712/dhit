@@ -167,7 +167,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--cream);color:var(--t
     <div id="filter-area"></div>
     <div id="content"></div>
     <div id="addform"></div>
-    <button class="open-btn" id="addbtn" onclick="event.stopPropagation();toggleForm()">＋ タスクを追加</button>
+    <button class="open-btn" id="addbtn">＋ タスクを追加</button>
   </div>
 </div>
 
@@ -285,13 +285,20 @@ async function loadFromGas(){
 
 function init(){
   document.getElementById('tlbl').textContent=today.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
+  // addbtnのイベント（Safari対応）
+  document.getElementById('addbtn').addEventListener('click',function(e){
+    e.stopPropagation();
+    toggleForm();
+  });
+  document.getElementById('addbtn').addEventListener('touchend',function(e){
+    e.stopPropagation();
+    e.preventDefault();
+    toggleForm();
+  },{passive:false});
   // pill-wrap外タップ/クリックでメニューを閉じる
   document.addEventListener('click',function(e){
-    if(!e.target.closest('.pill-wrap'))closeMenus();
+    if(!e.target.closest('.pill-wrap')&&!e.target.closest('#addbtn'))closeMenus();
   });
-  document.addEventListener('touchend',function(e){
-    if(!e.target.closest('.pill-wrap'))closeMenus();
-  },{passive:true});
   const urlCoach=getCoachFromUrl();
   if(urlCoach){startApp(urlCoach);}
   else{
@@ -606,7 +613,7 @@ function toggleForm(){
   if(showForm){
     const ts=today.toISOString().split('T')[0];
     const opts=D.cs.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-    document.getElementById('addform').innerHTML=`<div class="form-card" onclick="event.stopPropagation()">
+    document.getElementById('addform').innerHTML=`<div class="form-card" id="the-form-card">
       <h4>＋ タスクを追加</h4>
       <div class="fg"><label>タブの選択（新規の場合は下に入力）</label>
         <select id="f-sel" onchange="selChange()" style="width:100%;font-size:13px;padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;">
