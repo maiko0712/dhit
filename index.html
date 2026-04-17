@@ -210,8 +210,8 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:
         </div>
         <div class="fg"><label>タスクメモ（任意）</label><textarea id="f-tmemo" placeholder="備考など" style="min-height:52px;resize:vertical;"></textarea></div>
         <div class="form-actions">
-          <button class="btn-c" id="btn-cancelform">キャンセル</button>
-          <button class="btn-p" id="btn-savenew">追加する</button>
+          <div class="btn-c" id="btn-cancelform" role="button" style="display:inline-block;padding:9px 16px;text-align:center;">キャンセル</div>
+          <div class="btn-p" id="btn-savenew" role="button" style="display:inline-block;padding:9px 22px;text-align:center;">追加する</div>
         </div>
       </div>
     </div>
@@ -856,7 +856,7 @@ function toggleRepInput(prefix){
   if(!toggle||!customDiv)return;
   customDiv.style.display=toggle.value==='none'?'none':'flex';
 }
-async function saveNew(){alert('task='+JSON.stringify(document.getElementById('f-task')?document.getElementById('f-task').value:'NULL'));
+async function saveNew(){alert('saveNew!');
   // フォームの値を取得（要素が存在するか確認）
   // Safari対応: querySelectorで取得
   const formEl=document.getElementById('addform');
