@@ -166,16 +166,59 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--cream);color:var(--t
     </div>
     <div id="filter-area"></div>
     <div id="content"></div>
-    <div id="addform"></div>
+    <div id="addform" style="display:none;">
+      <div class="form-card">
+        <h4>＋ タスクを追加</h4>
+        <div class="fg"><label>タブの選択（新規の場合は下に入力）</label>
+          <select id="f-sel" style="width:100%;font-size:13px;padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;">
+            <option value="">＋ 新規タブを追加</option>
+          </select>
+        </div>
+        <div id="newc-fields">
+          <div class="fg"><label>タブ名</label><input id="f-name" type="text" placeholder="例：受講生名、仕事、プライベート"></div>
+          <div class="fg"><label>メモ（任意）</label><input id="f-cmemo" type="text" placeholder="例：メモ"></div>
+        </div>
+        <hr class="sdiv">
+        <div class="fg"><label>タスク内容</label><input id="f-task" type="text" placeholder="例：商談ロープレ、お手紙20件送付"></div>
+        <div class="fgrow">
+          <div class="fg"><label>期日</label><input id="f-date" type="date"></div>
+          <div class="fg"><label>優先度</label>
+            <select id="f-pri" style="width:100%;font-size:13px;padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;">
+              <option value="high">高（優先対応）</option>
+              <option value="mid" selected>普通</option>
+              <option value="low">低（余裕があれば）</option>
+            </select>
+          </div>
+        </div>
+        <div class="fg"><label>私がやること</label><input id="f-act" type="text" placeholder="例：トークノートで確認"></div>
+        <div class="fg"><label>繰り返し</label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <select id="f-rep-toggle" style="font-size:13px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;flex-shrink:0;">
+              <option value="none">繰り返しなし</option>
+              <option value="custom">カスタム</option>
+            </select>
+            <div id="f-rep-custom" style="display:none;align-items:center;gap:4px;flex:1;">
+              <input id="f-rep-num" type="number" min="1" max="99" value="1" style="width:60px;font-size:13px;padding:8px 8px;border-radius:8px;border:1.5px solid var(--border);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;text-align:center;">
+              <select id="f-rep-unit" style="font-size:13px;padding:8px 8px;border-radius:8px;border:1.5px solid var(--border);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;">
+                <option value="d">日ごと</option>
+                <option value="w">週ごと</option>
+                <option value="m">ヶ月ごと</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="fg"><label>タスクメモ（任意）</label><textarea id="f-tmemo" placeholder="備考など" style="min-height:52px;resize:vertical;"></textarea></div>
+        <div class="form-actions">
+          <button class="btn-c" id="btn-cancelform">キャンセル</button>
+          <button class="btn-p" id="btn-savenew">追加する</button>
+        </div>
+      </div>
+    </div>
     <button class="open-btn" id="addbtn">＋ タスクを追加</button>
   </div>
 </div>
 
 <script>
-window.onerror=function(msg,src,line,col,err){
-  alert('JSエラー:\n'+msg+'\n行:'+line);
-  return true;
-};
 const DOTCOLS=['#C97A8E','#7B9E8C','#8B7BB5','#C4956A','#6B9EC4'];
 const today=new Date();today.setHours(0,0,0,0);
 const ck='<svg width="11" height="9" viewBox="0 0 11 9" fill="none"><polyline points="1,4.5 4,7.5 10,1" stroke="#F2C4CE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -344,6 +387,11 @@ function startApp(coachName){
   COACH=coachName;D=ld();
   gasUrl=localStorage.getItem(gasKey())||'';
   manualOrder=JSON.parse(localStorage.getItem(dataKey()+'_order')||'[]');
+  // フォームボタンのイベント登録（Safari対応）
+  document.getElementById('btn-savenew').addEventListener('click',function(){saveNew();});
+  document.getElementById('btn-cancelform').addEventListener('click',function(){toggleForm();});
+  document.getElementById('f-sel').addEventListener('change',function(){selChange();});
+  document.getElementById('f-rep-toggle').addEventListener('change',function(){toggleRepInput('f');});
   document.getElementById('setup-area').innerHTML='';
   document.getElementById('coach-badge').textContent=coachName;
   document.getElementById('coach-badge').style.display='';
@@ -630,67 +678,30 @@ function saveMemo(cid,tid){
 function toggleForm(){
   showForm=!showForm;
   document.getElementById('addbtn').textContent=showForm?'✕ 閉じる':'＋ タスクを追加';
+  const addformEl=document.getElementById('addform');
+  addformEl.style.display=showForm?'block':'none';
   if(showForm){
-    const ts=today.toISOString().split('T')[0];
-    const opts=D.cs.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-    document.getElementById('addform').innerHTML=`<div class="form-card" id="the-form-card">
-      <h4>＋ タスクを追加</h4>
-      <div class="fg"><label>タブの選択（新規の場合は下に入力）</label>
-        <select id="f-sel" onchange="selChange()" style="width:100%;font-size:13px;padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;">
-          <option value="">＋ 新規タブを追加</option>${opts}
-        </select>
-      </div>
-      <div id="newc-fields">
-        <div class="fg"><label>タブ名</label><input id="f-name" type="text" placeholder="例：受講生名、仕事、プライベート"></div>
-        <div class="fg"><label>メモ（任意）</label><input id="f-cmemo" type="text" placeholder="例：メモ"></div>
-      </div>
-      <hr class="sdiv">
-      <div class="fg"><label>タスク内容</label><input id="f-task" type="text" placeholder="例：商談ロープレ、お手紇20件送付"></div>
-      <div class="fgrow">
-        <div class="fg"><label>期日</label><input id="f-date" type="date" value="${ts}"></div>
-        <div class="fg"><label>優先度</label>
-          <select id="f-pri" style="width:100%;font-size:13px;padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;">
-            <option value="high">高（優先対応）</option>
-            <option value="mid" selected>普通</option>
-            <option value="low">低（余裕があれば）</option>
-          </select>
-        </div>
-      </div>
-      <div class="fg"><label>私がやること</label><input id="f-act" type="text" placeholder="例：トークノートで確認"></div>
-      <div class="fg"><label>繰り返し</label>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <select id="f-rep-toggle" onchange="toggleRepInput('f')" style="font-size:13px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;flex-shrink:0;">
-            <option value="none">繰り返しなし</option>
-            <option value="custom">カスタム</option>
-          </select>
-          <div id="f-rep-custom" style="display:none;flex:1;display:none;align-items:center;gap:4px;">
-            <input id="f-rep-num" type="number" min="1" max="99" value="1" style="width:60px;font-size:13px;padding:8px 8px;border-radius:8px;border:1.5px solid var(--border);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;text-align:center;">
-            <select id="f-rep-unit" style="font-size:13px;padding:8px 8px;border-radius:8px;border:1.5px solid var(--border);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;">
-              <option value="d">日ごと</option>
-              <option value="w">週ごと</option>
-              <option value="m">ヶ月ごと</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <div class="fg"><label>タスクメモ（任意）</label><textarea id="f-tmemo" placeholder="備考など"></textarea></div>
-      <div class="form-actions">
-        <button class="btn-c" id="btn-cancelform">キャンセル</button>
-        <button class="btn-p" id="btn-savenew">追加する</button>
-      </div>
-    </div>`;
-    // Safari対応：フォーム生成後にボタンへ直接イベント登録
-    const btnAdd=document.getElementById('btn-savenew');
-    const btnCancel=document.getElementById('btn-cancelform');
-    if(btnAdd){
-      btnAdd.addEventListener('click',function(e){e.stopPropagation();saveNew();});
-      btnAdd.addEventListener('touchend',function(e){e.stopPropagation();e.preventDefault();saveNew();},{passive:false});
-    }
-    if(btnCancel){
-      btnCancel.addEventListener('click',function(e){e.stopPropagation();toggleForm();});
-      btnCancel.addEventListener('touchend',function(e){e.stopPropagation();e.preventDefault();toggleForm();},{passive:false});
-    }
-  }else{document.getElementById('addform').innerHTML='';}
+    // タブ選択肢を更新
+    const sel=document.getElementById('f-sel');
+    const currentVal=sel.value;
+    while(sel.options.length>1)sel.remove(1);
+    D.cs.forEach(c=>{
+      const opt=document.createElement('option');
+      opt.value=c.id;
+      opt.textContent=c.name;
+      sel.appendChild(opt);
+    });
+    sel.value=currentVal;
+    // 日付を今日に設定
+    document.getElementById('f-date').value=today.toISOString().split('T')[0];
+    // フォームをリセット
+    document.getElementById('f-task').value='';
+    document.getElementById('f-act').value='';
+    document.getElementById('f-tmemo').value='';
+    document.getElementById('f-name').value='';
+    document.getElementById('f-cmemo').value='';
+    selChange();
+  }
 }
 function selChange(){document.getElementById('newc-fields').style.display=document.getElementById('f-sel').value?'none':'block';}
 function setSort(mode){
