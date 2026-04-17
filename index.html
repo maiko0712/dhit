@@ -303,6 +303,18 @@ function init(){
   document.addEventListener('click',function(e){
     if(!e.target.closest('.pill-wrap')&&!e.target.closest('#addbtn'))closeMenus();
   });
+  // フォームボタンのイベント委譲（Safari touchend対応）
+  function handleFormBtn(e){
+    const btn=e.target.closest('[data-action]');
+    if(!btn)return;
+    e.stopPropagation();
+    if(e.type==='touchend')e.preventDefault();
+    const action=btn.getAttribute('data-action');
+    if(action==='saveNew')saveNew();
+    if(action==='toggleForm')toggleForm();
+  }
+  document.addEventListener('click',handleFormBtn);
+  document.addEventListener('touchend',handleFormBtn,{passive:false});
   const urlCoach=getCoachFromUrl();
   if(urlCoach){startApp(urlCoach);}
   else{
@@ -612,7 +624,6 @@ function saveMemo(cid,tid){
 }
 
 function toggleForm(){
-  alert('toggleForm! showForm before='+showForm);
   showForm=!showForm;
   document.getElementById('addbtn').textContent=showForm?'✕ 閉じる':'＋ タスクを追加';
   if(showForm){
@@ -660,8 +671,8 @@ function toggleForm(){
       </div>
       <div class="fg"><label>タスクメモ（任意）</label><textarea id="f-tmemo" placeholder="備考など"></textarea></div>
       <div class="form-actions">
-        <button class="btn-c" onclick="toggleForm()">キャンセル</button>
-        <button class="btn-p" onclick="saveNew()">追加する</button>
+        <button class="btn-c" data-action="toggleForm">キャンセル</button>
+        <button class="btn-p" data-action="saveNew">追加する</button>
       </div>
     </div>`;
   }else{document.getElementById('addform').innerHTML='';}
