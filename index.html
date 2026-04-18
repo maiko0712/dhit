@@ -293,15 +293,23 @@ async function postGasRaw(payload){
 async function sendToGas(payload){
   if(!gasUrl)return;
   const body=JSON.stringify(payload);
-  return new Promise(resolve=>{
-    const xhr=new XMLHttpRequest();
-    xhr.open('POST',gasUrl,true);
-    xhr.onload=resolve;
-    xhr.onerror=resolve;
-    const form=new FormData();
-    form.append('data',body);
-    xhr.send(form);
-  });
+  // 方法1: no-cors POST
+  try{
+    await fetch(gasUrl,{
+      method:'POST',
+      mode:'no-cors',
+      body:'data='+encodeURIComponent(body),
+      headers:{'Content-Type':'application/x-www-form-urlencoded'}
+    });
+    return;
+  }catch(e1){}
+  // 方法2: GETリクエスト
+  try{
+    await fetch(gasUrl+'?data='+encodeURIComponent(body),{
+      method:'GET',
+      mode:'no-cors'
+    });
+  }catch(e2){}
 }
 
 async function loadFromGas(){
