@@ -318,14 +318,19 @@ async function loadFromGas(){
       D.cs.forEach(c=>{oldColorMap[c.name]=c.col;});
 
       // タブ名変更に対応: スプシのstudentNameでタブを再構築
-      // 日付をyyyy-MM-dd形式に統一する関数
+      // 日付をyyyy-MM-dd形式に統一する関数（JST対応）
       function toDateStr(d){
         if(!d)return '';
         const s=String(d);
         if(s.match(/^\d{4}-\d{2}-\d{2}$/))return s;
         const dt=new Date(s);
         if(isNaN(dt))return s;
-        return dt.toISOString().split('T')[0];
+        // UTC→JSTに変換してから日付文字列を取得
+        const jst=new Date(dt.getTime()+9*60*60*1000);
+        const y=jst.getUTCFullYear();
+        const m=String(jst.getUTCMonth()+1).padStart(2,'0');
+        const day=String(jst.getUTCDate()).padStart(2,'0');
+        return y+'-'+m+'-'+day;
       }
       (json.tasks||[]).forEach(t=>{
         t.date=toDateStr(t.date);
