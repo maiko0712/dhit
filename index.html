@@ -175,7 +175,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:
             <option value="">＋ 新規タブを追加</option>
           </select>
         </div>
-        <div id="newc-fields">
+        <div id="newc-fields" style="display:block;">
           <div class="fg"><label>タブ名</label><input id="f-name" type="text" placeholder="例：受講生名、仕事、プライベート"></div>
           <div class="fg"><label>メモ（任意）</label><input id="f-cmemo" type="text" placeholder="例：メモ"></div>
         </div>
@@ -281,7 +281,7 @@ function toggleGasForm(){
   f.style.display=f.style.display==='none'?'block':'none';
   if(f.style.display==='block'&&gasUrl)document.getElementById('gas-url').value=gasUrl;
 }
-async function postGas(action,task,studentName,extra){console.log("postGas called",action,"gasUrl:",gasUrl?"set":"EMPTY");
+async function postGas(action,task,studentName,extra){
   if(!gasUrl||!COACH)return;
   const payload={action,coachName:COACH,task:{id:task.id,studentName,label:task.lbl,action:task.act,date:task.date,memo:task.memo||'',priority:task.pri||'mid',repeat:task.rep||'none'},...(extra||{})};
   await sendToGas(payload);
@@ -290,24 +290,18 @@ async function postGasRaw(payload){
   if(!gasUrl||!COACH)return;
   await sendToGas({coachName:COACH,...payload});
 }
-async function sendToGas(payload){console.log("sendToGas",payload.action,"gasUrl:",gasUrl?"set":"EMPTY");
+async function sendToGas(payload){
+  if(!gasUrl)return;
   const body=JSON.stringify(payload);
-  // FormDataとJSONの両方を試みる（Safari対応）
-  try{
+  return new Promise(resolve=>{
+    const xhr=new XMLHttpRequest();
+    xhr.open('POST',gasUrl,true);
+    xhr.onload=resolve;
+    xhr.onerror=resolve;
     const form=new FormData();
     form.append('data',body);
-    const res=await fetch(gasUrl,{method:'POST',body:form,redirect:'follow'});
-    if(res.ok||res.type==='opaque')return;
-  }catch(e1){console.warn('FormData失敗',e1);}
-  // フォールバック: URLエンコード
-  try{
-    await fetch(gasUrl,{
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body:'data='+encodeURIComponent(body),
-      redirect:'follow'
-    });
-  }catch(e2){console.warn('GAS送信失敗',e2);}
+    xhr.send(form);
+  });
 }
 
 async function loadFromGas(){
@@ -382,6 +376,11 @@ async function loadFromGas(){
 function init(){
   document.getElementById('tlbl').textContent=today.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
   // document全体でのイベント委譲（Safari対応）
+  // f-selとf-rep-toggleのchangeイベント（Safari対応）
+  document.addEventListener('change',function(e){
+    if(e.target.id==='f-sel')selChange();
+    if(e.target.id==='f-rep-toggle')toggleRepInput('f');
+  });
   function handleDocClick(e){
     const t=e.target;
     if(t.id==='btn-savenew'||t.closest('#btn-savenew')){
@@ -657,7 +656,7 @@ function renderContent(){
   el.innerHTML=h;
 }
 
-async function tog(cid,tid){console.log("tog called",cid,tid);
+async function tog(cid,tid){
   const c=D.cs.find(x=>x.id===cid);const t=c.ts.find(x=>x.id===tid);
   t.dn=!t.dn;
   if(!t.dn){
