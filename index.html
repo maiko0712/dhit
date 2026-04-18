@@ -281,7 +281,7 @@ function toggleGasForm(){
   f.style.display=f.style.display==='none'?'block':'none';
   if(f.style.display==='block'&&gasUrl)document.getElementById('gas-url').value=gasUrl;
 }
-async function postGas(action,task,studentName,extra){
+async function postGas(action,task,studentName,extra){console.log("postGas called",action,"gasUrl:",gasUrl?"set":"EMPTY");
   if(!gasUrl||!COACH)return;
   const payload={action,coachName:COACH,task:{id:task.id,studentName,label:task.lbl,action:task.act,date:task.date,memo:task.memo||'',priority:task.pri||'mid',repeat:task.rep||'none'},...(extra||{})};
   await sendToGas(payload);
@@ -657,7 +657,7 @@ function renderContent(){
   el.innerHTML=h;
 }
 
-async function tog(cid,tid){
+async function tog(cid,tid){console.log("tog called",cid,tid);
   const c=D.cs.find(x=>x.id===cid);const t=c.ts.find(x=>x.id===tid);
   t.dn=!t.dn;
   if(!t.dn){
