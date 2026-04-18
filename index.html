@@ -225,7 +225,7 @@ const today=new Date();today.setHours(0,0,0,0);
 const ck='<svg width="11" height="9" viewBox="0 0 11 9" fill="none"><polyline points="1,4.5 4,7.5 10,1" stroke="#F2C4CE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 function fmt(d){const x=new Date(d);return(x.getMonth()+1)+'/'+(x.getDate());}
-function du(ds){const d=new Date(ds);d.setHours(0,0,0,0);return Math.round((d-today)/86400000);}
+function du(ds){const p=ds?String(ds).split('-').map(Number):[];const d=p.length===3?new Date(p[0],p[1]-1,p[2]):new Date(ds);d.setHours(0,0,0,0);return Math.round((d-today)/86400000);}
 function bdg(days){if(days<0)return['br','期限切れ'];if(days===0)return['bw','今日'];if(days<=2)return['bw','あと'+days+'日'];if(days<=7)return['bi','あと'+days+'日'];return['bg2','あと'+days+'日'];}
 function ad(n){const d=new Date(today);d.setDate(d.getDate()+n);return d.toISOString().split('T')[0];}
 function priBdg(p){if(p==='high')return'<span class="pri-high">優先高</span>';if(p==='mid')return'<span class="pri-mid">普通</span>';return'<span class="pri-low">低</span>';}
