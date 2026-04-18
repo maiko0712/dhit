@@ -292,11 +292,14 @@ async function postGasRaw(payload){
 }
 async function sendToGas(payload){
   const body=JSON.stringify(payload);
+  console.log('sendToGas:', payload.action, 'gasUrl:', gasUrl?'set':'empty');
+  if(!gasUrl){console.warn('gasUrl未設定');return;}
   // FormDataとJSONの両方を試みる（Safari対応）
   try{
     const form=new FormData();
     form.append('data',body);
     const res=await fetch(gasUrl,{method:'POST',body:form,redirect:'follow'});
+    console.log('FormData result:', res.status, res.type);
     if(res.ok||res.type==='opaque')return;
   }catch(e1){console.warn('FormData失敗',e1);}
   // フォールバック: URLエンコード
