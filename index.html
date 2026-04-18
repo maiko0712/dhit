@@ -290,16 +290,13 @@ async function postGasRaw(payload){
   if(!gasUrl||!COACH)return;
   await sendToGas({coachName:COACH,...payload});
 }
-async function sendToGas(payload){
+async function sendToGas(payload){console.log("sendToGas",payload.action,"gasUrl:",gasUrl?"set":"EMPTY");
   const body=JSON.stringify(payload);
-  console.log('sendToGas:', payload.action, 'gasUrl:', gasUrl?'set':'empty');
-  if(!gasUrl){console.warn('gasUrl未設定');return;}
   // FormDataとJSONの両方を試みる（Safari対応）
   try{
     const form=new FormData();
     form.append('data',body);
     const res=await fetch(gasUrl,{method:'POST',body:form,redirect:'follow'});
-    console.log('FormData result:', res.status, res.type);
     if(res.ok||res.type==='opaque')return;
   }catch(e1){console.warn('FormData失敗',e1);}
   // フォールバック: URLエンコード
@@ -329,7 +326,17 @@ async function loadFromGas(){
       D.cs.forEach(c=>{oldColorMap[c.name]=c.col;});
 
       // タブ名変更に対応: スプシのstudentNameでタブを再構築
+      // 日付をyyyy-MM-dd形式に統一する関数
+      function toDateStr(d){
+        if(!d)return '';
+        const s=String(d);
+        if(s.match(/^\d{4}-\d{2}-\d{2}$/))return s;
+        const dt=new Date(s);
+        if(isNaN(dt))return s;
+        return dt.toISOString().split('T')[0];
+      }
       (json.tasks||[]).forEach(t=>{
+        t.date=toDateStr(t.date);
         if(!customerMap[t.studentName]){
           // 既存タブを探す（IDで照合）
           const existing=D.cs.find(c=>c.name===t.studentName);
@@ -756,7 +763,9 @@ function toggleForm(){
     document.getElementById('f-tmemo').value='';
     document.getElementById('f-name').value='';
     document.getElementById('f-cmemo').value='';
-    selChange();
+    // タブ選択をリセット（新規タブを選択状態に）
+    document.getElementById('f-sel').selectedIndex=0;
+    document.getElementById('newc-fields').style.display='block';
   }
 }
 function selChange(){document.getElementById('newc-fields').style.display=document.getElementById('f-sel').value?'none':'block';}
