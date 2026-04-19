@@ -722,11 +722,18 @@ function openEditCustomer(cid){
     <div style="font-size:13px;font-weight:700;color:var(--brown);margin-bottom:1rem;">タブ名を編集</div>
     <input id="cn-inp-${cid}" type="text" value="${c.name}" style="width:100%;font-size:14px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--pink-dark);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;outline:none;margin-bottom:1rem;">
     <div style="display:flex;gap:8px;">
-      <div class="btn-p" data-action="saveCustomer" data-cid="${cid}" style="flex:1;display:inline-block;padding:9px 22px;text-align:center;">保存</div>
-      <div class="btn-c" data-action="closeModal" style="display:inline-block;padding:9px 16px;text-align:center;">キャンセル</div>
+      <div id="modal-save-btn" style="flex:1;background:var(--brown);color:var(--pink);border-radius:10px;padding:9px 22px;text-align:center;font-size:13px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">保存</div>
+      <div id="modal-cancel-btn" style="background:transparent;border:1.5px solid var(--border);border-radius:10px;padding:9px 16px;text-align:center;font-size:13px;color:var(--text-mid);font-family:'Noto Sans JP',sans-serif;cursor:pointer;">キャンセル</div>
     </div>
   </div>`;
   document.body.appendChild(modal);
+  // 直接イベント登録（Safari・拡張機能対応）
+  function addBtnEvent(el, fn){
+    el.addEventListener('click', fn);
+    el.addEventListener('touchend', function(e){e.preventDefault();fn();}, {passive:false});
+  }
+  addBtnEvent(document.getElementById('modal-save-btn'), function(){saveEditCustomer(cid);});
+  addBtnEvent(document.getElementById('modal-cancel-btn'), function(){modal.remove();});
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
   document.getElementById('cn-inp-'+cid).focus();
 }
