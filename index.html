@@ -222,6 +222,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:
 <script>
 const DOTCOLS=['#C97A8E','#7B9E8C','#8B7BB5','#C4956A','#6B9EC4'];
 const today=new Date();today.setHours(0,0,0,0);
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 const ck='<svg width="11" height="9" viewBox="0 0 11 9" fill="none"><polyline points="1,4.5 4,7.5 10,1" stroke="#F2C4CE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 function fmt(d){const x=new Date(d);return(x.getMonth()+1)+'/'+(x.getDate());}
@@ -717,7 +718,7 @@ function saveEditCustomer(cid){
   c.name=newName;
   const modal=document.getElementById('customer-modal');
   if(modal)modal.remove();
-  postGasRaw({action:'renameTab',oldName,newName});
+  sendToGas({action:'renameTab',coachName:COACH,oldName,newName});
   sv();render();
 }
 
@@ -758,7 +759,7 @@ function toggleForm(){
     });
     sel.value=currentVal;
     // 日付を今日に設定
-    document.getElementById('f-date').value=today.toISOString().split('T')[0];
+    document.getElementById('f-date').value=todayStr();
     // フォームをリセット
     document.getElementById('f-task').value='';
     document.getElementById('f-act').value='';
@@ -802,7 +803,7 @@ function moveTask(tid,dir){
   manualOrder=ids;
   sv();render();
   // 並び順をスプシに送信
-  postGasRaw({action:'updateOrder',order:ids});
+  sendToGas({action:'updateOrder',coachName:COACH,order:ids});
 }
 
 // ===== ドラッグ&ドロップ =====
@@ -853,7 +854,7 @@ function swapTasks(srcId,targetId){
   ids.splice(ti,0,String(srcId));
   manualOrder=ids;
   sv();render();
-  postGasRaw({action:'updateOrder',order:ids});
+  sendToGas({action:'updateOrder',coachName:COACH,order:ids});
 }
 
 // ===== タッチドラッグ（スマホ） =====
