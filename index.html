@@ -718,7 +718,7 @@ function saveEditCustomer(cid){
   c.name=newName;
   const modal=document.getElementById('customer-modal');
   if(modal)modal.remove();
-  sendToGas({action:'renameTab',coachName:COACH,oldName,newName});
+  console.log('renameTab',{oldName,newName,COACH});sendToGas({action:'renameTab',coachName:COACH,oldName,newName});
   sv();render();
 }
 
