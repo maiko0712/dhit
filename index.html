@@ -395,6 +395,16 @@ function init(){
       if(e.type==='touchend')e.preventDefault();
       toggleForm();return;
     }
+    const saveBtn=t.closest('[data-action="saveCustomer"]');
+    if(saveBtn){
+      if(e.type==='touchend')e.preventDefault();
+      saveEditCustomer(saveBtn.getAttribute('data-cid'));return;
+    }
+    if(t.closest('[data-action="closeModal"]')){
+      if(e.type==='touchend')e.preventDefault();
+      const m=document.getElementById('customer-modal');
+      if(m)m.remove();return;
+    }
     if(!t.closest('.pill-wrap')&&!t.closest('#addbtn'))closeMenus();
   }
   document.addEventListener('click',handleDocClick);
@@ -645,7 +655,6 @@ function renderContent(){
                 ${upBtn}${dnBtn}
               </div>
               ${tm}
-              <div class="irow"><input class="memo-inp" id="mi${t.id}" placeholder="メモを追加..." value="${t.memo||''}"><button class="sm-btn" onclick="saveMemo(${c.id},${t.id})">保存</button></div>
             </div>
           </div>
         </div>`;
@@ -699,8 +708,8 @@ function openEditCustomer(cid){
     <div style="font-size:13px;font-weight:700;color:var(--brown);margin-bottom:1rem;">タブ名を編集</div>
     <input id="cn-inp-${cid}" type="text" value="${c.name}" style="width:100%;font-size:14px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--pink-dark);background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;outline:none;margin-bottom:1rem;">
     <div style="display:flex;gap:8px;">
-      <button class="btn-p" style="flex:1;" onclick="saveEditCustomer(${cid})">保存</button>
-      <button class="btn-c" onclick="document.getElementById('customer-modal').remove()">キャンセル</button>
+      <div class="btn-p" data-action="saveCustomer" data-cid="${cid}" style="flex:1;display:inline-block;padding:9px 22px;text-align:center;">保存</div>
+      <div class="btn-c" data-action="closeModal" style="display:inline-block;padding:9px 16px;text-align:center;">キャンセル</div>
     </div>
   </div>`;
   document.body.appendChild(modal);
@@ -718,7 +727,7 @@ function saveEditCustomer(cid){
   c.name=newName;
   const modal=document.getElementById('customer-modal');
   if(modal)modal.remove();
-  console.log('renameTab',{oldName,newName,COACH});sendToGas({action:'renameTab',coachName:COACH,oldName,newName});
+  sendToGas({action:'renameTab',coachName:COACH,oldName,newName});
   sv();render();
 }
 
