@@ -740,8 +740,7 @@ function saveEditCustomer(cid){
   c.name=newName;
   const modal=document.getElementById('customer-modal');
   if(modal)modal.remove();
-  // タブ内の全タスクを新しい名前でスプシに更新送信
-  c.ts.forEach(t=>postGas('update',t,newName));
+  sendToGas({action:'renameTab',coachName:COACH,oldName,newName});
   // ローカルにリネームマッピングを保存（GAS再読み込み時に適用）
   const renames=JSON.parse(localStorage.getItem(dataKey()+'_tab_renames')||'{}');
   Object.keys(renames).forEach(k=>{if(renames[k]===oldName)renames[k]=newName;});
@@ -974,4 +973,3 @@ init();
 </script>
 </body>
 </html>
-
