@@ -702,7 +702,8 @@ async function tog(cid,tid){
       const newFmt=repStr.match(/^(\d+)([dwm])$/);
       if(newFmt){const n=parseInt(newFmt[1]),u=newFmt[2];if(u==='d')nextDate.setDate(nextDate.getDate()+n);else if(u==='w')nextDate.setDate(nextDate.getDate()+n*7);else if(u==='m')nextDate.setMonth(nextDate.getMonth()+n);}
       else{nextDate.setDate(nextDate.getDate()+parseInt(repStr));}
-      const nextTask={id:Date.now()+Math.floor(Math.random()*9999),date:nextDate.toISOString().split('T')[0],lbl:t.lbl,act:t.act,memo:t.memo,pri:t.pri,rep:t.rep,dn:false};
+      const nextDateStr=nextDate.getFullYear()+'-'+String(nextDate.getMonth()+1).padStart(2,'0')+'-'+String(nextDate.getDate()).padStart(2,'0');
+      const nextTask={id:Date.now()+Math.floor(Math.random()*9999),date:nextDateStr,lbl:t.lbl,act:t.act,memo:t.memo,pri:t.pri,rep:t.rep,dn:false};
       c.ts.push(nextTask);
       await postGas('add',nextTask,c.name);
     }
@@ -973,3 +974,4 @@ init();
 </script>
 </body>
 </html>
+
