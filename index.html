@@ -379,6 +379,9 @@ async function loadFromGas(){
 
       // ローカルのD.csをcustomerMapで完全置き換え
       D.cs=Object.values(customerMap).filter(c=>c.ts.length>0);
+      // ローカルのタブ名変更をGAS読み込み後に適用
+      const tabRenames=JSON.parse(localStorage.getItem(dataKey()+'_tab_renames')||'{}');
+      D.cs.forEach(c=>{let n=c.name;while(tabRenames[n]){n=tabRenames[n];}c.name=n;});
 
       // 並び順を反映
       if(json.order&&json.order.length>0)manualOrder=json.order;
@@ -696,14 +699,13 @@ async function tog(cid,tid){
       let nextDate=new Date(t.date);nextDate.setHours(0,0,0,0);
       const repStr=String(t.rep);
       const newFmt=repStr.match(/^(\d+)([dwm])$/);
-      if(newFmt){
-        const n=parseInt(newFmt[1]),u=newFmt[2];
-        if(u==='d')nextDate.setDate(nextDate.getDate()+n);
-        else if(u==='w')nextDate.setDate(nextDate.getDate()+n*7);
-        else if(u==='m')nextDate.setMonth(nextDate.getMonth()+n);
-      }else{
-        nextDate.setDate(nextDate.getDate()+parseInt(repStr));
+      function advance(d){
+        if(newFmt){const n=parseInt(newFmt[1]),u=newFmt[2];if(u==='d')d.setDate(d.getDate()+n);else if(u==='w')d.setDate(d.getDate()+n*7);else if(u==='m')d.setMonth(d.getMonth()+n);}
+        else{d.setDate(d.getDate()+parseInt(repStr));}
       }
+      advance(nextDate);
+      // 期限切れの場合は今日以降になるまで繰り返し進める
+      while(nextDate<=today){advance(nextDate);}
       const nextTask={id:Date.now()+Math.floor(Math.random()*9999),date:nextDate.toISOString().split('T')[0],lbl:t.lbl,act:t.act,memo:t.memo,pri:t.pri,rep:t.rep,dn:false};
       c.ts.push(nextTask);
       await postGas('add',nextTask,c.name);
@@ -742,6 +744,11 @@ function saveEditCustomer(cid){
   const modal=document.getElementById('customer-modal');
   if(modal)modal.remove();
   sendToGas({action:'renameTab',coachName:COACH,oldName,newName});
+  // ローカルにリネームマッピングを保存（GAS再読み込み時に適用）
+  const renames=JSON.parse(localStorage.getItem(dataKey()+'_tab_renames')||'{}');
+  Object.keys(renames).forEach(k=>{if(renames[k]===oldName)renames[k]=newName;});
+  renames[oldName]=newName;
+  localStorage.setItem(dataKey()+'_tab_renames',JSON.stringify(renames));
   sv();render();
 }
 
